@@ -1,7 +1,0 @@
-# read data
-household_missing = pd.read_csv(
-    '../material_2_eda-main/data_input/household-missing.csv',
-    index_col=0,
-    parse_dates=['purchase_time'])
-
-household_missing.head()
