@@ -1,0 +1,59 @@
+---
+title: "Latihan RMarkdown"
+author: "Daniel Syahputra"
+date: "Senin, 10 Januari 2022"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: true
+    df_print: paged
+---
+
+## Introduction
+
+File ini dibuat untuk melatih pemahaman terkait penggunaan RMarkdown.
+
+## Objective
+
+1.  Markdown
+2.  Chunck
+3.  Insert Notes
+4.  Insert link
+
+### Markdown
+
+-   Markdown digunakan untuk mendokumentasikan sebuah proses analisis data. Biasanya berupa teks yang deskriptif sehingga pembaca memahami code yag ditulis.
+
+-   Markdown adalah sebuah *markup language* untuk melakukan pemformatan teks, misalnya:
+
+    -   Heading
+
+    -   **Bold**
+
+    -   *Italic*
+
+    -   `code`
+
+    -   dan lainnya
+
+### Chunck
+
+Chunck digunakan sebagai tempat untuk menulis dan mengeksekusi code. Berikut adalah contohnya:
+
+```{r}
+# assignment
+angka1 <- 10
+angka2 <- 20
+
+# menjumlahkan
+angka1 + angka2
+```
+
+> Semakin sering Anda berlatih, maka semakin mahir Anda dalam menggunakannya.
+
+## Reference
+
+-   [Markdown Cheatsheet](https://www.markdownguide.org/cheat-sheet/)

@@ -36,7 +36,7 @@ text-align: justify}
 **R** is the programming language, **RStudio** is an IDE for using R.
 
 ```{r import photo}
-knitr::include_graphics("./img/rstudio.png")
+knitr::include_graphics("assets/rstudio.png")
 ```
 
 -   **Console** : command prompt, engine utama\
@@ -53,7 +53,15 @@ Bagian putih dari R Markdown (.Rmd) berguna untuk menulis narasi. Pada bagian in
 
 Bagian abu-abu dari Rmarkdown adalah `chunk`. Chunk berguna untuk menulis **code**.
 
+Shortcut
+
+-   menambahkan chunk : ctrl/cmd + alt/option + i
+-   run 1 chunk : ctrl/cmd + shift + enter
+-   run 1 baris : ctrl/cmd + enter
+
 ```{r}
+
+
 
 ```
 
@@ -73,6 +81,27 @@ nama <- "Algoritma"
 nama
 ```
 
+Data rumah:
+
+-   panjang = 50
+
+-   lebar = 10
+
+-   luas = panjang\*lebar
+
+-   shortcut assignment= alt + -
+
+```{r}
+panjang <- 50
+lebar <- 10
+```
+
+```{r}
+# hitung luas rumah
+luas <- panjang*lebar
+luas
+```
+
 ## R is Case Sensitive
 
 ```{r}
@@ -81,9 +110,41 @@ nama
 "Algoritma" != "algoritma"
 ```
 
+Aturan dalam object:
+
+1.  Tidak boleh ada spasi
+2.  Tidak boleh ada angka didepan nama object
+3.  Case sensitive
+
+-   artinya Panjang tidak sama dengan panjang
+
+-   Apabila ingin menghapus object yang sudah tersimpan di environment, dapat menggunakan command `rm(nama_object)` yang dijalankan di console
+
+-   cara lain buat hapus:
+
+1.  Ganti list jadi grid
+2.  pilih variable
+3.  hapus pakai icon kuas
+
+## Overwrite
+
+Value yang tersimpan kedalam environment adalah value yang terakhir di run.
+
+```{r}
+tempat <- "Algoritma" # character
+tempat <- "Rumah"
+```
+
+```{r}
+tempat <- "Ruang belajar"
+tempat <- "Cafe"
+```
+
 ## Comment
 
 Untuk memasukan narasi dalam chunk dapat menggunakan **comment** dengan menambahkan `#` sebelum narasi tersebut. Comment tidak dianggap sebagai codingan dalam chunk, sehingga tidak akan menimbulkan error.
+
+-   Shortcut --> ctrl/cmd + shift + c
 
 ```{r}
 #ini adalah komentar
@@ -107,18 +168,51 @@ Buatlah 3 buah object sebagai berikut:
 Gunakan komentar untuk memperjelas code yang diketikkan
 
 ```{r}
-nama <- "Daniel Syahputra"
-```
-
-```{r}
-pekerjaan <- "Mahasiswa"
+# code here
 
 ```
 
-```{r}
-kota <- "Medan"
+## Summary Day 1
 
-```
+R dan RStudio: Tools data science
+
+-   R : Bahasanya
+-   RStudio : Tempatnya/IDE/GUI
+
+Files:
+
+-   .html :
+
+    -   File yang dapat dibuka di web browser
+    -   Hasil knit dari file rmd
+
+-   .rmd :
+
+    -   Kepanjangan dari RMarkdown
+
+    -   File yang harus dibuka menggunakan RStudio
+
+    -   Gabungan dari code R dan Markdown
+
+        -   Markdown : Menulis narasinya
+        -   Code R (Chunk): Menulis code/perintah R
+
+-   .rproj :
+
+    -   Untuk membuka RStudio agar directorynya langsung pada project/folder
+
+Object
+
+-   Menyimpan suatu nilai atau value
+
+-   Ditandai denga tanda assignment (\<-)
+
+-   Sifat-sifat
+
+    -   Tidak boleh pakai spasi
+    -   tidak boleh ada angka didepan
+    -   Case sensitive
+    -   Overwrite
 
 ## Data Type
 
@@ -127,9 +221,10 @@ kota <- "Medan"
 Tipe data yang berisi huruf/karakter.
 
 ```{r}
-# cek tipe data kota
+# buat data kota
 
-class(kota)
+# cek tipe data
+
 ```
 
 ### Numeric
@@ -137,10 +232,10 @@ class(kota)
 Tipe data berisi angka yang dapat berupa angka kontinu (ada koma/pecahan), maupun diskrit (bilangan bulat tanpa koma).
 
 ```{r}
+# buat data kota
+
 # cek tipe data
 
-number <- 12
-class(number)
 ```
 
 ### Integer
@@ -149,14 +244,8 @@ Tipe data berisi angka yang berupa angka diskrit (bilangan bulat tanpa koma). Um
 
 ```{r}
 # buat data kota
-number <- 12L
-```
 
-```{r}
-class(number)
-```
-
-```{r}
+# cek tipe data
 
 ```
 
@@ -165,13 +254,10 @@ class(number)
 Tipe data yang hanya berisi `TRUE` atau `FALSE`. Penulisan TRUE/FALSE dapat disingkat menjadi T/F.
 
 ```{r}
+# buat data kota
 
 # cek tipe data
-ini_boolean <- TRUE
-```
 
-```{r}
-class(ini_boolean)
 ```
 
 ### Implicit Coercion
@@ -199,13 +285,13 @@ knitr::include_graphics("img/data_type.png")
 
 -   [ ] Bahasa Pemrograman R bersifat case sensitive\
 -   [ ] Tanda \<- berfungsi untuk memasukkan suatu nilai kedalam sebuah objek\
--   [x] Tanda // diawal sebuah chunk berfungsi sebagai tanda komentar
+-   [ ] Tanda // diawal sebuah chunk berfungsi sebagai tanda komentar
 
 2.  Tipe data yang tepat untuk kolom yang berisi nama pelanggan adalah ?
 
 -   [ ] Logical
 -   [ ] Integer
--   [x] Character
+-   [ ] Character
 -   [ ] Numeric
 
 1.  Di bawah ini mana pernyataan yang **salah** terkait sifat pemrograman di R ?
@@ -228,17 +314,11 @@ knitr::include_graphics("img/data_type.png")
 vector1 <- c(TRUE, 1L, 1/2)
 vector2 <- c(TRUE, "TRUE", 1, 1.0)
 vector3 <- c(1, 2, 3, 4L)
-
 ```
 
-```{r}
-class(vector3)
-
-```
-
--   Tipe data `vector1` adalah numeric
--   Tipe data `vector2` adalah character
--   Tipe data `vector3` adalah numeric
+-   Tipe data `vector1` adalah ...
+-   Tipe data `vector2` adalah ...
+-   Tipe data `vector3` adalah ...
 
 ## Data Structure
 
@@ -250,7 +330,7 @@ Vector merupakan salah satu struktur data yang sering digunakan. vector merupaka
 
 ```{r}
 place <- c("Algoritma", "BCA", "Jakarta")
-class(place)
+place
 ```
 
 ### Factor
@@ -267,7 +347,6 @@ card
 Matrix merupakan struktur data yang memiliki 2 dimensi dan hanya bisa di isi dengan 1 tipe data saja
 
 ```{r}
-test <- c('A','B', 'C','D', 'E', 6)
 mat <- matrix(11:16, nrow = 3, ncol = 2)
 mat
 ```
@@ -291,14 +370,12 @@ Jika ingin mengakses element pada list bisa mengguanakan tanda `[]`
 
 ```{r}
 our_list[3]
-class(our_list[3])
 ```
 
 Untuk mengakses *vector* yang ada di dalamnya, maka kita bisa menggunakan `[[]]`:
 
 ```{r}
-our_list[3][[1]][3]
-#class(our_list[3][[3]])
+our_list[[3]]
 ```
 
 ### Data Frame
@@ -331,20 +408,7 @@ Buat sebuah data frame yang berisi 3 baris dengan kolom sebagai berikut:
 Simpan pada object yang bernama `product`
 
 ```{r}
-# Asumsi: quantity nya tidak bisa dibeli dalam pecahan atau desimal
-product_name <- c("Pulpen", "Buku", "Pensil")
-quantity <- c(20L, 10L, 5L)
-harga <- c(40000, 15000, 10000)
-product <- data.frame(
-  nama=product_name,
-  kuantitas=quantity,
-  harga=harga
-)
-product
-
-```
-
-```{r}
+# code here
 
 ```
 
@@ -361,7 +425,7 @@ getwd()
 dan untuk mengatur lokasi dari working directory bisa menggunakan `setwd()`
 
 ```{r}
-#setwd("../P4DS/")
+setwd("../P4DS/")
 ```
 
 ## Read and extracting data
@@ -377,11 +441,8 @@ retail <- read.csv("data_input/retail.csv")
 Pada umumnya ketika bekerja dengan data kita ingin melihat data bentuk data secara keseluruhan, hal tersebut dapat dilakukan dengan menggunakan fungsi View().
 
 ```{r}
-#View(retail)
-```
 
-```{r}
-retail
+
 ```
 
 ### head() and tail()
@@ -389,14 +450,15 @@ retail
 Untuk melihat seluruh sebagian data yang sudah digunakan bisa menggunakan fungsi `head()` dan `tail()`. `head()` berguna untuk melihat beberapa baris pertama pada data (default 6)
 
 ```{r}
-head(retail)
+
+
 ```
 
 sedangkan `tail()` untuk melihat beberapa data terakhir.
 
 ```{r}
 
-tail(retail, 10)
+
 ```
 
 ### str()
@@ -404,7 +466,7 @@ tail(retail, 10)
 Untuk melihat struktur data yang dimiliki dapat mengguankan fungsi `str()`
 
 ```{r}
-str(retail)
+
 ```
 
 ### dim(), nrow(), ncol()
@@ -412,14 +474,14 @@ str(retail)
 mengetahui dimensi dari data bisa menggunakan fungsi dim()
 
 ```{r}
-dim(retail)
+
 ```
 
 untuk mengetahui jumlah baris bisa menggunakan fungsi `nrow()` sedangkan jumlah kolom bisa menggunakan `ncol()`
 
 ```{r}
-nrow(retail)
-ncol(retail)
+
+
 ```
 
 ### summary
@@ -428,7 +490,7 @@ dengan menggunakan fungsi summary() kita bisa melihat rangkuman dari suatu data.
 
 ```{r}
 
-summary(retail)
+
 ```
 
 ## ❓ Knowledge Check
@@ -438,14 +500,14 @@ summary(retail)
 -   [ ] `head(retail, 10)`
 -   [ ] `str(retail)`
 -   [ ] `summary(retail, 10)`
--   [x] `tail(retail, 10)`
+-   [ ] `tail(retail, 10)`
 
 2.  Fungsi yang digunakan untuk menampilkan dimensi data serta tipe data setiap kolom secara sekaligus yaitu ...
 
 -   [ ] `dim()`
 -   [ ] `ncol()`
 -   [ ] `class()`
--   [x] `str()`
+-   [ ] `str()`
 
 ## Performing simple data cleansing
 
@@ -468,23 +530,16 @@ Untuk mengubah tipe data, kita bisa menggunakan fungsi `as.___()` di mana `___` 
 
 **Diskusi:** Dari data `retail`, kolom manakah saja yang perlu diubah tipe datanya?
 
--   Order.Date
--   Ship.Date
--   Ship.Mode
--   Segment
--   Category
--   Sub.Category
--   Product.Name
+-   ...
+-   ...
+-   ...
 
 ```{r}
-retail$Segment <- as.factor(retail$Segment)
-retail$Segment
+# explicit coercion
+
+
 # sekarang pada kolom dengan tipe data factor muncul frekuensinya 
 
-```
-
-```{r}
-length(unique(retail$Segment))
 ```
 
 Parameter `format` pada `as.Date()` digunakan untuk menspesifikan format penulisan tanggal pada data, berikut format yang sering digunakan:
