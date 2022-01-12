@@ -474,11 +474,10 @@ Untuk mengubah tipe data, kita bisa menggunakan fungsi `as.___()` di mana `___` 
 -   Segment
 -   Category
 -   Sub.Category
--   Product.Name
 
 ```{r}
 retail$Segment <- as.factor(retail$Segment)
-retail$Segment
+head(retail$Segment)
 # sekarang pada kolom dengan tipe data factor muncul frekuensinya 
 
 ```
@@ -507,9 +506,18 @@ Parameter `format` pada `as.Date()` digunakan untuk menspesifikan format penulis
     -   %d = tanggal, contoh: 01 sampai 31
 
 ```{r}
-retail$Ship.Date <- as.Date()
-retail$Order.Date <- as.Date()
+retail$Ship.Date <- as.Date(retail$Ship.Date, format="%M/%d/%y")
+retail$Order.Date <- as.Date(retail$Order.Date, format="%M/%d/%y")
 head(retail)
+
+```
+
+```{r}
+retail$Ship.Mode <- as.factor(retail$Ship.Mode)
+retail$Category <- as.factor(retail$Category)
+retail$Sub.Category <- as.factor(retail$Sub.Category)
+str(retail)
+
 ```
 
 Tambahan: Kolom dengan tipe data date dapat dioperasikan satu sama lain. Misal kita ingin menghitung durasi waktu antara pemesanan (`Order.Date`) dengan pengiriman (`Ship.Date`), lalu simpan hasil perhitungan ke kolom `Duration`.
@@ -521,8 +529,14 @@ Fungsi `difftime()` digunakan untuk menghitung `time1 - time2` dengan parameter:
 -   `units`: satuan waktu hasil pengurangan
 
 ```{r}
-retail$Duration <- 
-head(retail)
+retail$Duration <- difftime(time1 = retail$Ship.Date, time2 = retail$Order.Date, units = "days")
+head(retail$Duration)
+
+```
+
+```{r}
+str(retail)
+
 ```
 
 ### Check Missing Value
@@ -530,13 +544,13 @@ head(retail)
 Untuk mengetahui apakah terdapat missing value pada data, kita bisa menggunakan fungsi `anyNA()`
 
 ```{r}
-
+anyNA(retail)
 ```
 
-untuk mengecek missing value pada setiap kolom dapat menggunakan fungsi `is.na()` dan `ColSums()`
+untuk mengecek missing value pada setiap kolom dapat menggunakan fungsi `is.na()` dan `colSums()`
 
 ```{r}
-
+colSums(is.na(retail))
 ```
 
 Pada data retail tidak didapati missing value. Proses imputasi missing value akan dibahas pada course machine learning.
@@ -552,7 +566,7 @@ knitr::include_graphics("img/subset.png")
 Dari data retail, ambil data dengan index 10 hingga 20
 
 ```{r}
-
+retail[10:20, ]
 
 ```
 
@@ -560,7 +574,7 @@ Dari data retail ambil kolom kolom Ship.Date dan Ship.Mode
 
 ```{r}
 
-
+retail[, c("Ship.Date", "Ship.Mode")]
 ```
 
 #### Conditional Subsetting
@@ -582,13 +596,15 @@ Dari data `retail` ambil data yang memiliki `profit` lebih dari 4000, dan ambil 
 
 ```{r}
 
-
+retail[(retail$Profit > 4000), c("Product.Name", "Profit")]
 ```
 
 Berapa banyak data yang ber- Segment Corporate dan memiliki Profit diatas 500 ?
 
 ```{r}
-
+cond1 <- retail$Segment == 'Corporate'
+cond2 <- retail$Profit > 500
+retail[(cond1 & cond2), ]
 
 ```
 
@@ -600,13 +616,18 @@ Anda sebagai seorang analis hendak menelusuri performa penjualan perusahaan reta
 
 ```{r}
 # your code
-
+cond1 <- retail$Category == 'Furniture'
+cond2 <- retail$Ship.Mode == 'Standard Class'
+retail[(cond1 & cond2), ]
 
 ```
 
 2.  Ada berapa banyak transaksi dari `Category` Furniture yang mengakibatkan kerugian (`Profit` kurang dari nol)?
 
 ```{r}
+cond1 <- retail$Category == 'Furniture'
+cond2 <- retail$Profit < 0
+retail[(cond1 & cond2), ]
 
 ```
 
@@ -657,7 +678,7 @@ Ketika melakukan analisis data selain subsetting hal lain yang sering dilakukan 
 
 ```{r}
 
-
+table(retail$Segment, retail$Ship.Mode)
 ```
 
 ### `prop.table()`
@@ -669,8 +690,7 @@ Untuk mengetahui **proporsi/persentase** dari tiap kategori.
 Tampilkan proporsi transaksi untuk masing-masing Segment pelanggan!
 
 ```{r}
-
-
+prop.table(table(retail$Segment, retail$Ship.Mode))
 ```
 
 ### Xtabs
@@ -690,6 +710,12 @@ Berapa total Profit yang dihasilkan untuk tiap Category Produk?
 
 ```{r}
 
+xtabs(Profit ~ Category, retail)
+
+```
+
+```{r}
+plot(xtabs(Profit ~ Category, retail))
 
 ```
 
@@ -697,7 +723,8 @@ Berapa total Sales yang dihasilkan untuk tiap pasangan Segment & Category?
 
 ```{r}
 # your code
-
+xtabs(Sales ~ Category + Segment, retail)
+#heatmap(xtabs(Sales ~ Category + Segment, retail))
 
 ```
 
@@ -720,12 +747,15 @@ Ket:
     -   max = nilai max
     -   mean = rata rata
     -   median = nilai tengah
+    -   length = frekuensi
 
 Contoh: Berapa rata-rata Sales untuk setiap Segment dan Category?
 
 ```{r}
 
-
+aggregate(formula= Sales ~ Segment + Category, 
+          data=retail, 
+          FUN=mean)
 ```
 
 ### Summary Tables
@@ -739,6 +769,30 @@ Contoh: Berapa rata-rata Sales untuk setiap Segment dan Category?
 
 1.  Berapa rata-rata profit yang dihasilkan dari tiap Segmen pelanggan?
 
+    ```{r}
+
+    aggregate(Profit ~ Segment, retail, mean)
+    ```
+
 2.  Berapa jumlah Quantity yang terjual untuk masing-masing Category?
 
+    ```{r}
+    aggregate(Quantity ~ Category, retail, sum)
+    ```
+
 3.  Pasangan Category-Sub.Category yang yang menghasilkan rata-rata profit tertinggi adalah?
+
+    ```{r}
+
+    result <- aggregate(Profit ~ Category + Sub.Category, retail, mean)
+
+    head(result[order(result$Profit, decreasing=TRUE), ], 1)
+
+    # Pasangan Category-SubCategory terbaik: Technology - Copiers
+
+    ```
+
+    ```{r}
+    result
+
+    ```
