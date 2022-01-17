@@ -73,7 +73,7 @@ sesuai.
 
 ```{r}
 # Inspect Data Type 
-
+str(vids)
 ```
 
 Apa saja kolom yang tipe datanya belum sesuai?
@@ -99,7 +99,8 @@ Before:
 
 ```{r}
 # Please type your code
-
+as.Date(vids$trending_date, format = "%y.%d.%m")
+head(vids$trending_date)
 ```
 
 Default date pada R \<- Year - Month - Day (YYYY/MM/DD)
@@ -108,12 +109,16 @@ After:
 
 ```{r}
 # Please type your code
-  
+head(vids$trending_date)
 ```
 
 ```{r}
 # Class adalah sebuah fungsi untuk melakukan inspeksi tipe data
+str(vids$trending_date)
+```
 
+```{r}
+class(vids$trending_date)
 ```
 
 -   Kolom `publish_time`
@@ -121,19 +126,20 @@ After:
 Before:
 
 ```{r}
-
+head(vids$publish_time)
+as.Date(vids$publish_time, format="%Y-%m-%d")
 ```
 
 After:
 
 ```{r}
 # Please type your code
-
+head(vids$publish_time)
 ```
 
 ```{r}
 # Cek tipe data
-
+str(vids$publish_time)
 ```
 
 Quick Summary About `as.Date()`
@@ -159,7 +165,8 @@ Before:
 
 ```{r}
 # Please type your code
-
+vids$trending_date <- ydm(vids$trending_date)
+head(vids$trending_date)
 ```
 
 After:
@@ -167,7 +174,7 @@ After:
 ```{r}
 # Please type your code
 # Format date dari kolom trending_date = Year-Day-Month
-
+class(vids$trending_date)
 ```
 
 -   Kolom `publish_time`
@@ -177,10 +184,15 @@ Before:
 ```{r}
 # Please type your code
 # Format date dari kolom publish_date = Year-Month-Day-Hour-Month-Day
-
+vids$publish_time <- ymd_hms(vids$publish_time, tz='America/New_York')
+head(vids$publish_time)
 ```
 
 After:
+
+```{r}
+class(vids$publish_time)
+```
 
 Kita bisa merubah timezone (zona waktu) List time zone:
 <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>
@@ -226,21 +238,22 @@ Task 1: Mengekstrak Tahun dari kolom `trending_date`
 
 ```{r}
 # Please type your code
-
+head(year(vids$trending_date))
 ```
 
 Task 2: Mengekstrak bulan dari kolom `publish_time`
 
 ```{r}
 # Please type your code
-
+head(month(vids$publish_time))
 ```
 
 Task 3: Mengekstrak bulan sebagai nama bulan dari kolom `publish_time`
 
 ```{r}
 # Please type your code
-
+# Ganti abbr = T apabila ingin nama bulan disingkat.
+head(month(vids$publish_time, label = T, abbr = F))
 ```
 
 Task 4: Mengekstrak tanggal dari kolom `trending_date`
