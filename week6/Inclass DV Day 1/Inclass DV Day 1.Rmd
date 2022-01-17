@@ -1,0 +1,653 @@
+---
+title: "Inclass DV"
+author: "Algoritma Team"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: true
+    number_sections: true
+    df_print: paged
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+
+# chunk options
+knitr::opts_chunk$set(
+  fig.align = "center",
+  message = FALSE,
+  warning = FALSE,
+  comment = "#>"
+)
+```
+
+TOPIC: 1. DATA WRANGLING 2. DATA VISUALIZATION
+
+# About The Dataframe
+
+Data yang akan kita gunakan untuk mendalami Data Visualization selama 4
+hari kedepan adalah sebuah dataframe yang bernama **Youtube's US
+Trending Videos**.
+
+Contoh trending video di Youtube:
+
+```{r}
+# Please run code down below
+knitr::include_graphics("assets/trending.png")
+```
+
+## Data Import / Read Data
+
+```{r}
+# Please run code down below
+vids <- read.csv("data_input/USvideos.csv")
+head(vids)
+```
+
+Penjelasan mengenai 12 kolom dalam dataframe:
+
+-   `trending_date`: tanggal trending (format: YY.DD.MM)
+-   `title`: judul video
+-   `channel_title`: nama channel Youtube
+-   `category_id`: kategori video
+-   `publish_time`: tanggal upload video (format: YYYY-MM-DD-HH-MM-SS)
+-   `views`: jumlah views dalam video tersebut
+-   `likes`: jumlah likes dalam video tersebut
+-   `dislikes`: jumlah dislikes dalam video tersebut
+-   `comment_count` jumlah komentar
+-   `comment_disabled`: apakah kolom komentar tidak diaktifkan
+-   `rating_disabled`: apakah rating video tidak diaktifkan
+-   `video_error_or_removed`: apakah video dihapus
+
+Setelah melakukan import dataframe yang ingin digunakan jangan lupa
+untuk melakukan inspeksi tipe data, untuk memastikan tipe data sudah
+sesuai.
+
+```{r}
+# Inspect Data Type 
+
+```
+
+Apa saja kolom yang tipe datanya belum sesuai?
+
+-   trending_date -> datetime
+-   publish_time -> datetime
+-   channel_title -> factor
+-   category_id -> factor
+
+Kenapa melakukan inspeksi tipe data itu **penting** sebelum melanjutkan
+ke tahap selanjutnya? Untuk memastikan bahwa semua tipe data yang ada
+pada dataframe tersebut sudah sesuai dan *bisa diolah lebih lanjut*.
+
+## Data Wrangling
+
+### Manipulasi data waktu menggunakan fungsi as.date()
+
+strftime reference: <https://strftime.org/>
+
+-   Kolom `trending_date`
+
+Before:
+
+```{r}
+# Please type your code
+
+```
+
+Default date pada R \<- Year - Month - Day (YYYY/MM/DD)
+
+After:
+
+```{r}
+# Please type your code
+  
+```
+
+```{r}
+# Class adalah sebuah fungsi untuk melakukan inspeksi tipe data
+
+```
+
+-   Kolom `publish_time`
+
+Before:
+
+```{r}
+
+```
+
+After:
+
+```{r}
+# Please type your code
+
+```
+
+```{r}
+# Cek tipe data
+
+```
+
+Quick Summary About `as.Date()`
+
+-   Format tanggal/date yang bisa langsung diubah dengan menggunakn
+    `as.date()` adalah Year-Month-Day
+-   Dia akan menghilangkan format waktu
+-   Jika format date/tanggal berbeda dengan default fungsi `as.Date()`,
+    kita bisa menambahkan parameter **format =**.
+
+### Manipulasi data waktu menggunakan library `lubridate`
+
+Penggunaan lubridate secara singkat dapat dilihat di `cheatsheet`
+
+```{r}
+#install.packages("lubridate")
+library(lubridate)
+```
+
+-   Kolom `trending_date`
+
+Before:
+
+```{r}
+# Please type your code
+
+```
+
+After:
+
+```{r}
+# Please type your code
+# Format date dari kolom trending_date = Year-Day-Month
+
+```
+
+-   Kolom `publish_time`
+
+Before:
+
+```{r}
+# Please type your code
+# Format date dari kolom publish_date = Year-Month-Day-Hour-Month-Day
+
+```
+
+After:
+
+Kita bisa merubah timezone (zona waktu) List time zone:
+<https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>
+
+Kita ubah timezone menjadi Jakarta
+
+```{r}
+# Please run code down below
+head(ymd_hms(vids$publish_time, tz = "Asia/Jakarta"))
+```
+
+Kita ubah timezone menjadi New_York
+
+```{r}
+# Please run code down below
+head(ymd_hms(vids$publish_time, tz = "America/New_York"))
+```
+
+```{r}
+# Please type your code
+
+```
+
+Quick Summary About tipe yang memiliki tanggal & waktu:
+
+-   *POSIXct/POSIXt* adalah tipe data untuk data yang memiliki tanggal &
+    waktu
+-   Jika ada data waktu, kita bisa mengatur zona waktunya dengan
+    menambahkan parameter **tz =**
+
+**Bermain dengan `lubridate`**
+
+`most_view` adalah sebuah objeck yang isinya adalah sebuah video dengan
+views terbanyak dari dataframe **Youtube's US Trending Videos**
+
+```{r}
+# Please run the code down below
+most_view <- vids[vids$views == max(vids$views), ]
+most_view
+```
+
+Task 1: Mengekstrak Tahun dari kolom `trending_date`
+
+```{r}
+# Please type your code
+
+```
+
+Task 2: Mengekstrak bulan dari kolom `publish_time`
+
+```{r}
+# Please type your code
+
+```
+
+Task 3: Mengekstrak bulan sebagai nama bulan dari kolom `publish_time`
+
+```{r}
+# Please type your code
+
+```
+
+Task 4: Mengekstrak tanggal dari kolom `trending_date`
+
+```{r}
+# Please type your code
+
+```
+
+Task 5: mengekstrak hari dari kolom `trending_date`
+
+```{r}
+# Please type your code
+```
+
+Task 6: mengekstrak jam, menit, dan detik dari kolom `publish_time`
+
+```{r}
+# Please type your code
+# jam
+
+
+# menit
+
+
+# detik 
+
+```
+
+**DIVE DEEPER**
+
+1.  Buat kolom baru berisi hari publish video dan jam publish video
+    untuk `vids`. Beri nama `publish_day` dan `publish_hour` dari kolom
+    `publish_time`
+
+-   `publish_day`
+
+Hint: label = T, abbr = F
+
+```{r}
+# Please type your code
+
+```
+
+-   `publish_hour`
+
+```{r}
+# Please type your code
+
+```
+
+2.  Buat kolom berisi berapa lama waktu untuk trending? Beri nama
+    `time_to_trend`
+
+Hint:
+
+-   buat kolom `publish_date` yang isinya **hanya** tanggal (YYY-MM-DD)
+    dari kolom `publish_time`
+-   mengurangkan kolom `trending_date` dengan `publish_date` kemudian
+    ubah menjadi numeric
+
+```{r}
+# Please type your code
+
+```
+
+### Membuat kategori jam untuk kolom `publish_hour`
+
+```{r}
+# Please run the code down below
+unique(vids$publish_hour)
+```
+
+Kita akan mengkategorikan `publish_hour` menjadi 3 kategori:
+
+-   12am to 8am
+-   8am to 3pm
+-   3pm to 12am
+
+Langkah yang dilakukan:
+
+-   Membuat kolom untuk informasi jam (`publish_hour`)
+-   Membuat function untuk mentransformasi jam menjadi kategori
+-   Menerapkan function tersebut ke seluruh data
+
+Membuat function untuk mengkategorikan jam
+
+```{r}
+# Please run the code down below
+convert_hour <- function(y){ 
+    if(y <= 8){
+      y <- "12am to 8am" # Untuk video dengan publish_hour antara tengah malam hingga jam 8 pagi
+    }else 
+      if(y > 8 & y < 16){
+      y <- "8am to 3pm" # untuk video antara jam 8 pagi hingga jam 3 sore
+    }else{
+      y <- "3pm to 12am" # untuk video antara jam 3 sore sampai tengah malam
+    }  
+}
+```
+
+Untuk mengimplementasikan fungsi `convert_hour` kita bisa memanfaatkan
+fungsi baru yang bernama `sapply()`.
+
+-   `X` = parameter u/ mendifine kolom apa yang ingin kita transformasi
+-   `FUN` = parameter untuk memasukan nama fungsi yang sudah kita buat
+
+```{r}
+# Please run the code down below
+vids$publish_when <- sapply(X = vids$publish_hour, 
+                            FUN = convert_hour) 
+
+head(vids$publish_when)
+```
+
+```{r}
+# Please run the code down below
+str(vids$publish_when)
+```
+
+Ubah publish_when kedalam bentuk factor
+
+```{r}
+# Please type your code down below
+
+```
+
+### Merubah `category_id`
+
+Pada tahapan ini kita akan melakukan transformasi pada kolom
+`category_id` dari angka yang tidak bermakna menjadi nama kategori yang
+lebih intuitif.
+
+```{r}
+# Please run the code down belom
+vids[ , c("channel_title", "category_id")]
+```
+
+Kita ubah `category_id` menggunakan fungsi `sapply()` dan `switch()`
+
+```{r}
+# Please run the code down belom
+data <- c("1","2")
+
+sapply(X = data, # data/kolom yang ingin diubah 
+       FUN = switch, # fungsi
+       "1" = "Education", 
+       "2" = "Travel", 
+       "4" = "Music")
+```
+
+**sapply**: mengaplikasikan fungsi ke tiap baris pada suatu kolom secara
+bersamaan.
+
+```{r}
+# Please run the code down below
+vids$category_id <- sapply(as.character(vids$category_id), switch, 
+                           "1" = "Film and Animation",
+                           "2" = "Autos and Vehicles", 
+                           "10" = "Music", 
+                           "15" = "Pets and Animals", 
+                           "17" = "Sports",
+                           "19" = "Travel and Events", 
+                           "20" = "Gaming", 
+                           "22" = "People and Blogs", 
+                           "23" = "Comedy",
+                           "24" = "Entertainment", 
+                           "25" = "News and Politics",
+                           "26" = "Howto and Style", 
+                           "27" = "Education",
+                           "28" = "Science and Technology", 
+                           "29" = "Nonprofit and Activism",
+                           "43" = "Shows")
+
+vids$category_id <- as.factor(vids$category_id)
+
+vids[ , c("channel_title", "category_id")]
+```
+
+### Merubah beberapa kolom dengan tipe `integer` menjadi `numeric` sekaligus
+
+Ketika kita ingin merubah beberapa kolom sekaligus, kita bisa
+menggunakan function `lapply()`/`sapply()`. Misalnya kita ingin merubah
+kolom-kolom yang integer (`views`, `dislikes`, `comment_count`, dan
+`publish_hour`) menjadi numeric
+
+```{r}
+# Please type your code down below
+
+```
+
+**lapply**: untuk mengaplikasikan fungsi (misal merubah tipe data) ke
+beberapa kolom secara bersamaan.
+
+### Mengambil judul video yang unik
+
+Dalam data vids terdapat redudansi data yaitu terdapat video yang muncul
+beberapa kali karena trending lebih dari 1 hari.
+
+```{r}
+# Please run the code down below
+length(vids$title)
+length(unique(vids$title))
+```
+
+Untuk analisis lanjutan, *kita hanya akan menggunakan data video saat
+video tersebut pertama kali trending* demi mengurangi redudansi data.
+Untuk itu kita dapat menggunakan `unique()` dan `match()`.
+
+**unique**: menghasilkan nilai unik dari suatu vektor.
+
+**match**: menghasilkan index data yang cocok dari hasil pencocokan
+vektor 1 ke vektor ke 2
+
+```{r}
+# Please run the code down below
+df <- data.frame(nama = c("Victor", "Victor", "Ajeng", "Yosia", "Yosia", "Ajeng"),
+           nilai = c(70, 95, 85, 80, 70, 90))
+df
+```
+
+```{r}
+# Please run the code down belom
+df <- df[order(df$nilai, decreasing = T), ]
+df
+```
+
+```{r}
+# Please run the code down belom
+df[match(unique(df$nama), df$nama), ]
+```
+
+Mari kita kurangi redudasi data yang terdapat di dataframe **vids** dan
+simpan dalam objeck baru bernama **vids.unik**
+
+```{r}
+# Please type your code down below
+
+```
+
+Note:
+
+-   `switch()` membutuhkan kamus untuk mentranslasikan nilai. Bila nilai
+    tidak ada pada kamus, maka dihasilkan NULL.
+-   Nilai yang ditranslasi lebih baik diubah ke tipe karakter terlebih
+    dahulu
+
+# Basic plotting in R
+
+Exploratory Data Analysis Bertujuan untuk mendapat informasi dari data
+(explorasi). EDA biasa dilakukan menggunakan base plot.
+
+Fungsi yang akan digunakan untuk melakukan base plot adalah `plot()`,
+jenis plot yang dihasilkan berubah sesuai tipe data yang dimasukkan,
+jika:
+
+-   1 variabel, x kategori: **bar chart**
+-   1 variabel, x numerik: **histogram plot**
+-   2 variabel, x dan y adalah numerik: **scatter plot**
+-   2 variabel, x kategori, y numerik: **boxplot**
+
+## Bar
+
+Business case: Sebagai seorang konsultan media sosial, kita ditugaskan
+untuk membantu seorang klien yang ingin memulai karir sebagai youtuber.
+Salah satu pertanyaan pertamanya adalah *pada rentan jam berapa saya
+harus publish supaya diminati?*
+
+```{r}
+# Please type your code down below
+
+```
+
+Insight:
+
+-   
+
+## Histogram
+
+Business case: Klien tersebut sangat tertarik untuk membuat konten
+dengan kategori `Autos and Vehicles`, `Gaming` dan `Travel and Events`.
+Klien tersebut ingin mendapatkan gambaran secara garis besar *berapakah
+distribusi like ratio yang bisa didapatkan dari ketiga kategori
+tersebut?*
+
+Hint:
+
+-   Like ratio dapat dihitung dengan membagi like dengan view
+-   Melakukan conditional subseting
+
+Step 1: Menghitung like ratio lalu simpan ke objek bernama `like_ratio`
+
+```{r}
+# Please type your code down below
+
+```
+
+Step 2: Melakukan conditional subseting untuk 3 unique value lalu simpan
+ke objek baru bernama `vids.agt`
+
+```{r}
+# Please type your code down below
+
+```
+
+Dikarenakan level dari unique valuenya masih ada, kita dapat
+menghilangkannya dengan menggunakan fungsi `droplevels()`
+
+```{r}
+# Please type your code down below
+
+```
+
+Step 3: Visualisasi
+
+Ketika kita ingin membuat histogram plot, kita tidak menggunakan fungsi
+`plot()`, melainkan kita akan menggunakan fungsi `hist()`
+
+```{r}
+# Please type your code down below
+
+```
+
+Insight:
+
+-   
+
+## Boxplot
+
+Business case: Selain mengetahui secara garis besar mengenai distribusi
+dari ketiga kategori video tersebut. Klien kita juga ingin mengetahui
+lebih detail dari masing-masing kategori, *kategori video apakah yang
+memiliki like ratio paling tinggi?*
+
+```{r}
+# Please type your code down below
+
+```
+
+Insight:
+
+-   
+
+## Scatter plot
+
+Business case: Pertanyaan terakhir yang diajukan oleh klien kita adalah
+beliau juga ingin megetahui hubungan likes dan dislikes dari video
+dengan ketiga category tersebut. Agar dapat menentukan *content manakah
+yang tepat untuk di publish sehingga memperoleh likes ratio yang banyak
+dan dislikes ratio yang sedikit?*
+
+Hint: Rasio didapatkan dari membagi dislike dengan jumlah view per judul
+video
+
+Step 1: Menghitung dislike ratio lalu simpan ke objek bernama
+`dislike_ratio`
+
+```{r}
+# Please type your code down below
+
+```
+
+Step 2: Melakukan visualisasi
+
+```{r}
+# Please type your code down below
+
+```
+
+Plot sudah terbentuk tapi kita kekurangan informasi kita tidak tahu
+titik mana dengan kategori `Autos and Vehicles`, `Gaming` atau
+`Travel and Events` Kita juga ingin menambahkan garis tren hubungan
+antara 2 variabel
+
+Step 3: Menambahkan Legend
+
+Untuk memberikan lagenda pada scatter plot kita bisa menambahkan fungsi
+`legend()`, pada fungsi tersebut nantinya kita bisa mengisi beberapa
+parameter + `x` = mengatur posisi legend + `legend` = unique value dari
+kolom yang ingin ditampilkan + `fill` = untuk memberikan warna, sesuai
+dengan jumlah unique value dari kolom yang ingin ditampilkan
+
+```{r}
+# Please type your code down below
+
+```
+
+Step 4: Menambahkan garis tren
+
+Untuk memberikan garis yang menunjukan apakah ada tren positif ataupun
+negatif kita bisa menambahkan fungsi `abline()` + Pada fungsi tersebut
+nantinya bisa di isi dengan fungsi `lm()` yang akan membuat garis linear
+berdasarkan perhitungan linear model, dengan mengisi beberapa parameter
+berikut ini - `formula` = parameter ini bisa diisi dengan - `data` =
+dataframe yang digunakan
+
+```{r}
+# Please type your code down below
+
+```
+
+Insight:
+
+-   
+
+**Kapan Menggunakan Base Plot?**
+
+-   Ketika ingin membuat plot sederhana
+-   Ketika kita ingin melakukan analisis secara cepat
+-   Ketika grafik yang dihasilkan tidak untuk ditampilkan di depan umum
