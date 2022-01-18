@@ -78,10 +78,11 @@ str(vids)
 
 Apa saja kolom yang tipe datanya belum sesuai?
 
--   trending_date -> datetime
--   publish_time -> datetime
--   channel_title -> factor
+-   trending_date -> date
+-   title -> factor
 -   category_id -> factor
+-   publsih_time ->date
+-   channel_title -> factor
 
 Kenapa melakukan inspeksi tipe data itu **penting** sebelum melanjutkan
 ke tahap selanjutnya? Untuk memastikan bahwa semua tipe data yang ada
@@ -99,8 +100,7 @@ Before:
 
 ```{r}
 # Please type your code
-as.Date(vids$trending_date, format = "%y.%d.%m")
-head(vids$trending_date)
+# as.Date(vids$trending_date)
 ```
 
 Default date pada R \<- Year - Month - Day (YYYY/MM/DD)
@@ -109,16 +109,12 @@ After:
 
 ```{r}
 # Please type your code
-head(vids$trending_date)
+head(as.Date(vids$trending_date, format="%y.%d.%m"))  
 ```
 
 ```{r}
 # Class adalah sebuah fungsi untuk melakukan inspeksi tipe data
-str(vids$trending_date)
-```
-
-```{r}
-class(vids$trending_date)
+class(as.Date(vids$trending_date, format="%y.%d.%m"))
 ```
 
 -   Kolom `publish_time`
@@ -127,19 +123,18 @@ Before:
 
 ```{r}
 head(vids$publish_time)
-as.Date(vids$publish_time, format="%Y-%m-%d")
+```
+
+```{r}
+# Please type your code
+as.Date(vids$publish_time)
 ```
 
 After:
 
 ```{r}
 # Please type your code
-head(vids$publish_time)
-```
-
-```{r}
-# Cek tipe data
-str(vids$publish_time)
+class(as.Date(vids$publish_time))
 ```
 
 Quick Summary About `as.Date()`
@@ -165,8 +160,7 @@ Before:
 
 ```{r}
 # Please type your code
-vids$trending_date <- ydm(vids$trending_date)
-head(vids$trending_date)
+class(vids$trending_date)
 ```
 
 After:
@@ -174,6 +168,10 @@ After:
 ```{r}
 # Please type your code
 # Format date dari kolom trending_date = Year-Day-Month
+vids$trending_date <- ydm(vids$trending_date)
+```
+
+```{r}
 class(vids$trending_date)
 ```
 
@@ -184,15 +182,10 @@ Before:
 ```{r}
 # Please type your code
 # Format date dari kolom publish_date = Year-Month-Day-Hour-Month-Day
-vids$publish_time <- ymd_hms(vids$publish_time, tz='America/New_York')
-head(vids$publish_time)
+class(vids$publish_time)
 ```
 
 After:
-
-```{r}
-class(vids$publish_time)
-```
 
 Kita bisa merubah timezone (zona waktu) List time zone:
 <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>
@@ -213,7 +206,8 @@ head(ymd_hms(vids$publish_time, tz = "America/New_York"))
 
 ```{r}
 # Please type your code
-
+vids$publish_time <- ymd_hms(vids$publish_time, tz = "America/New_York")
+class(vids$publish_time)
 ```
 
 Quick Summary About tipe yang memiliki tanggal & waktu:
@@ -238,35 +232,46 @@ Task 1: Mengekstrak Tahun dari kolom `trending_date`
 
 ```{r}
 # Please type your code
-head(year(vids$trending_date))
+year(most_view$trending_date)
 ```
 
 Task 2: Mengekstrak bulan dari kolom `publish_time`
 
 ```{r}
 # Please type your code
-head(month(vids$publish_time))
+month(most_view$publish_time)
 ```
+
+```{r}
+month(most_view$publish_time, label = TRUE, abbr = FALSE)
+```
+
+Notes:
+
+-   parameter `label =` = untuk mengkestrak tanggal dalam bentuk nama
+    bulan
+-   parameter `abbr` = untuk mengekstrk tanggal dalam bentuk singaktan
+    atau tidak
 
 Task 3: Mengekstrak bulan sebagai nama bulan dari kolom `publish_time`
 
 ```{r}
 # Please type your code
-# Ganti abbr = T apabila ingin nama bulan disingkat.
-head(month(vids$publish_time, label = T, abbr = F))
+month(most_view$publish_time, label = TRUE, abbr = FALSE)
 ```
 
 Task 4: Mengekstrak tanggal dari kolom `trending_date`
 
 ```{r}
 # Please type your code
-
+day(most_view$trending_date)
 ```
 
 Task 5: mengekstrak hari dari kolom `trending_date`
 
 ```{r}
 # Please type your code
+wday(most_view$trending_date, label = TRUE, abbr = FALSE)
 ```
 
 Task 6: mengekstrak jam, menit, dan detik dari kolom `publish_time`
@@ -274,13 +279,13 @@ Task 6: mengekstrak jam, menit, dan detik dari kolom `publish_time`
 ```{r}
 # Please type your code
 # jam
-
+hour(most_view$publish_time)
 
 # menit
-
+minute(most_view$publish_time)
 
 # detik 
-
+second(most_view$publish_time)
 ```
 
 **DIVE DEEPER**
@@ -295,14 +300,16 @@ Hint: label = T, abbr = F
 
 ```{r}
 # Please type your code
-
+vids$publish_day <- wday(vids$publish_time,label = TRUE, abbr = FALSE)
+head(vids$publish_day)
 ```
 
 -   `publish_hour`
 
 ```{r}
 # Please type your code
-
+vids$publish_hour=hour(vids$publish_time)
+head(vids$publish_hour)
 ```
 
 2.  Buat kolom berisi berapa lama waktu untuk trending? Beri nama
@@ -317,7 +324,10 @@ Hint:
 
 ```{r}
 # Please type your code
+vids$publish_date <- date(vids$publish_time)
 
+vids$time_to_trend <- as.numeric(difftime(vids$trending_date, vids$publish_date, units = "days"))
+head(vids$time_to_trend)
 ```
 
 ### Membuat kategori jam untuk kolom `publish_hour`
@@ -358,8 +368,10 @@ convert_hour <- function(y){
 Untuk mengimplementasikan fungsi `convert_hour` kita bisa memanfaatkan
 fungsi baru yang bernama `sapply()`.
 
--   `X` = parameter u/ mendifine kolom apa yang ingin kita transformasi
--   `FUN` = parameter untuk memasukan nama fungsi yang sudah kita buat
+-   `X` adalah parameter u/ mendifine kolom apa yang ingin kita
+    transformasi
+-   `FUN` adalah parameter untuk memasukan nama fungsi yang sudah kita
+    buat
 
 ```{r}
 # Please run the code down below
@@ -378,7 +390,8 @@ Ubah publish_when kedalam bentuk factor
 
 ```{r}
 # Please type your code down below
-
+vids$publish_when <- as.factor(vids$publish_when)
+str(vids$publish_when)
 ```
 
 ### Merubah `category_id`
@@ -442,7 +455,9 @@ kolom-kolom yang integer (`views`, `dislikes`, `comment_count`, dan
 
 ```{r}
 # Please type your code down below
+vids[ , c("views", "dislikes", "comment_count")] <- lapply(vids[ , c("views", "dislikes", "comment_count")], as.numeric)
 
+str(vids)
 ```
 
 **lapply**: untuk mengaplikasikan fungsi (misal merubah tipe data) ke
@@ -491,7 +506,11 @@ simpan dalam objeck baru bernama **vids.unik**
 
 ```{r}
 # Please type your code down below
+vids.unik <- vids[match(unique(vids$title), vids$title), ]
+```
 
+```{r}
+length(unique(vids.unik$title))
 ```
 
 Note:
@@ -500,6 +519,59 @@ Note:
     tidak ada pada kamus, maka dihasilkan NULL.
 -   Nilai yang ditranslasi lebih baik diubah ke tipe karakter terlebih
     dahulu
+
+# Basic plotting in R
+
+Exploratory Data Analysis Bertujuan untuk mendapat informasi dari data
+(explorasi). EDA biasa dilakukan menggunakan base plot.
+
+Fungsi yang akan digunakan untuk melakukan base plot adalah `plot()`,
+jenis plot yang dihasilkan berubah sesuai tipe data yang dimasukkan,
+jika:
+
+-   1 variabel, x kategori: **bar chart**
+-   1 variabel, x numerik: **histogram plot**
+-   2 variabel, x dan y adalah numerik: **scatter plot**
+-   2 variabel, x kategori, y numerik: **boxplot**
+
+Summary Day 1:
+
+-   `Libray(lubridate)`
+
+    -   berisikan fungsi-fungsi untuk melakukan transformasi data
+        menjadi datetime
+    -   berisikan fungsi-fungsi untuk mengkestrak data tangal ke kolom
+        baru
+
+-   Fungsi If Else
+
+    -   Untuk membuat beberaka kateogri -> kategori tersebut untuk
+        mengelompokan `publish_hour`
+
+-   Fungsi `sapply()`
+
+    -   Fungsi sapply bisa digunakan untuk menerabakan sebuah fungsi ke
+        setiap baris pada dataframe kita
+
+-   Fungsi `lapply()`
+
+    -   Fungsi tersebut bisa digunakan untuk menerabkan sebuah fungsi ke
+        setiap kolom pada dataframe kita
+
+-   Fungso `match` & `unique`
+
+    -   Kedua fungsi tersebut bisa digunakan untuk mengambil kemunculan
+        unique yang pertama
+
+-   Fungsi `plot()`
+
+    -   Fungsi tersebut kita gunakan ketika kita ingin melaukan tahapan
+        exploratory
+
+        -   Tahapan eksploratory dilakukan ketika kita ingin melakukan
+            analisis dengan cepat
+        -   Tahapan eksploratory dilakukan ketika hasil visualisasinya
+            tidak akan ditampilkan kepada orang lain
 
 # Basic plotting in R
 
