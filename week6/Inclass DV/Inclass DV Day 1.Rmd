@@ -1018,16 +1018,19 @@ Step 7: Menabhakan `geom_text()`
 # Please type your code down below
 ggplot(data = trending_channel, mapping = aes(x = Freq, y = reorder(Var1, Freq))) + 
   geom_col(mapping = aes(fill=Freq)) +
-  geom_text(mapping = aes(label = Freq, 
-                          color='black', 
-                          size=3)) + 
+  geom_text(mapping = aes(label = Freq),
+                          colors='black', 
+                          size=3,
+                          nudge_x = 0.7) + 
   scale_fill_gradient(low = "yellow", high = "red") + 
   theme_classic()
 ```
 
 Insight:
 
--   
+-   Channel berbau talk show paling sering trending
+
+-   Channel dengan freq tertinggi adalah Refinery29
 
 ## Multivariate Plot
 
@@ -1056,8 +1059,14 @@ bisa memanfaatkan sebuah fungsi yang bernama `aggregate.data.frame()`.
     -   `FUN`: fungsi matematis
 
 ```{r}
-# Please Type Your Code Down Below
-vids.agg <- 
+# Please Type Your Code Down Belowtrending
+vids.unik$dislike_ratio <- vids.unik$dislikes / vids.unik$views
+
+vids.agg <- aggregate.data.frame(x = list(like_ratio = vids.unik$like_ratio,
+                                          dislike_ratio = vids.unik$dislike_ratio),
+                                by=list(kategori = vids.unik$category_id),
+                                FUN=mean)
+head(vids.agg)
 ```
 
 Step 2: Membuatnya menjadi dataframe menjadi long format
@@ -1086,14 +1095,16 @@ numeric
 
 ```{r}
 # Please type your code down below
-
+pivot_longer(data =  vids.agg, 
+             cols = c("like_ratio", "dislike_ratio"))
 ```
 
 Simpan hasilnya kedalam sebuah object yang bernama `vids.agg.long`
 
 ```{r}
 # Please type your code down below
-vids.agg.long <- 
+vids.agg.long <- pivot_longer(data =  vids.agg, 
+             cols = c("like_ratio", "dislike_ratio"))
 ```
 
 *Contoh mengubah pivot longer -> pivot wider untuk keperluan
@@ -1113,7 +1124,7 @@ Parameter pada fungsi `pivot_wider()`
 
 ```{r}
 # Please type your code down below
-
+pivot_wider(data = vids.agg.long, names_from = name, values_from = value)
 ```
 
 Step 3: Mari visualisasi dataframe yang sudah dibuat menjadi long format
@@ -1123,7 +1134,15 @@ dan didalam postion itu bisa memasukan sebuah value bernama `dodge`.
 
 ```{r}
 # Please Type Your Code Down Below
+ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, value))) +
+  geom_col(mapping = aes(fill = name), 
+           position = "dodge")
 
+```
+
+```{r}
+ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, value))) +
+  geom_col(mapping = aes(fill = name))
 ```
 
 Pada fungsi `geom_col()` ada sebuah parameter yang bernama `position`
@@ -1131,5 +1150,206 @@ dan didalam postion itu bisa memasukan sebuah value bernama `fill`.
 
 ```{r}
 # Please Type Your Code Down Below
+ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, value))) +
+  geom_col(mapping = aes(fill = name),
+           position = "fill")
+```
+
+Step 4: Mengubah warna dalam plot dengan menabahkan fungsi
+`scale_fill_manual()`
+
+-   `scale_fill_manual()` adalah sebuah fungsi untuk meberikan gradasi
+    warna pada setiap bar dalam `geom_col()`, parameter yang dapat
+    digunakan adalah
+
+    -   `values` = parameter untuk menentukan warna apa saja yang akan
+        digunakan
+
+Contoh:
+
+`scale_fill_manual(values = c("orange", "red"))`
+
+```{r}
+# Please Type Your Code Down Below
+ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, value))) +
+  geom_col(mapping = aes(fill = name), 
+           position = "dodge") + 
+  scale_fill_manual(values = c("red", "orange"))
+```
+
+**Dive Deeper**
+
+Business Question: Sebagai seorang analyst kita ingin mencari tahu
+*frekuensi untuk setiap rentang waktu upload* pada *setiap kategori*
+channel youtube.
+
+Additional task:
+
+-   Gunakan fungsi `labs()`, untuk membuat tampilan dari visualisasi
+    lebih rapi
+-   Coba tarik insight dari hasil visualisasi yang dibuat
+
+Hint:
+
+-   Kalkulasi frekuensi kemunculan setiap rentan waktu upload dengan
+    menggunakan fungsi `table()`
+
+```{r}
+# Please Type Your Code Down Below
+publish_category <- as.data.frame(table(vids.unik$category_id, vids.unik$publish_when))
+colnames(publish_category) <- c("kategori", "rentang", "freq")
+head(publish_category)
+```
+
+```{r}
+library(ggthemes)
+ggplot(data = publish_category, mapping = aes(x = freq, y = reorder(kategori, freq))) +
+  geom_col(mapping = aes(fill = rentang), 
+           position = "dodge") + 
+  labs(title = "Frekuensi Untuk Setiap Category dan Rentang Waktu",
+       subtitle = "Youtube Trending Data",
+       x = "Frekuensi",
+       y = 'Kategori',
+       color="rentang") + 
+  theme_clean()
+```
+
+Insigth:
+
+-   Kategori channel entertainment adalah jenis kategori yang paling
+    banyak dilihat.
+
+-   Mayoritas setiap kategori channel di publish di jam 8pagi - 3 sore
+
+-   Hampir setiap kategori channel jarang di publish di jam 12 malam - 8
+    pagi.
+
+## Faceting
+
+Memplotkan variabel di panel terpisah, sehingga visual menjadi lebih
+jelas. Fungsi yang dapat digunakan adalah `facet_wrap()`
+
+Parameter yang bisa digunakan pada fungsi `facet_wrap()`
+
+-   `facets` = parameter yang menentukan kolom apa yang mau dipisah
+-   `scales` = ada 3 value yang bisa diisi pada parameter ini yaiut
+    `free_x`, `free_y` & `free`
+
+Contoh: `facet_wrap(facets = ~ name, scales = "free_x")`
+
+```{r}
+# Tambahkan facet untuk scales = free_x
+ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, value))) +
+  geom_col(mapping = aes(fill = name), 
+           position = "dodge") + 
+  scale_fill_manual(values = c("red", "orange")) + 
+  facet_wrap(facets = ~ name, scales = "free_x") + 
+  theme_clean()
+```
+
+```{r}
+# Tambahkan facet untuk scales = free_y
+ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, value))) +
+  geom_col(mapping = aes(fill = name), 
+           position = "dodge") + 
+  scale_fill_manual(values = c("red", "orange")) + 
+  facet_wrap(facets = ~ name, scales = "free_y") + 
+  theme_clean()
+```
+
+```{r}
+# Tambahkan facet untuk scales = free
+ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, value))) +
+  geom_col(mapping = aes(fill = name), 
+           position = "fill") + 
+  scale_fill_manual(values = c("red", "orange")) + 
+  facet_wrap(facets = ~ name, scales = "free") + 
+  theme_clean()
+```
+
+## Line chart
+
+Business Case: Bagaimana trending dari konten dengan kategori `Comedy`,
+`Education`,dan `Sciennce and technology` dari hari ke hari.
+
+Hint:
+
+-   Pada kasus ini kita akan menggunakan objek `vids`
+
+Step 1: Mari kita persiapkan datanya dengan conditional subseting dengan
+memanfaatkan `%in%`
+
+```{r}
+# Please run the code down below
+vids.ces <- 
+```
+
+Step 2: Menghilangkan levels yang tidak diperlukan dengan menggunkan
+fungsi `droplevels()`
+
+```{r}
+# Please run the code down below
+vids.ces$category_id <- 
+```
+
+Step 3: Mari kita coba hitung kemunculan video yang trending dengan
+menggunkan fungsi `table()`
+
+```{r}
+# Please run the code down below
+vids.ces <- 
+```
+
+Step 4: Mari kita buat plotnya dengan menggunakan `geom_line()`
+
+```{r}
+# Please type your code down below
+ggplot(data = , mapping = aes(x = , y = Freq, color = )) 
 
 ```
+
+Step 5: Mari kita buat plotnya dengan menggunakan `geom_point()`
+
+```{r}
+# Please type your code down below
+
+```
+
+Step 6: Mengatur sumbu X dengan menggunakan fungsi `scale_x_date()`
+
+Parameter yang dapat digunakan: - date breaks = `...days` `... week`
+`...month` - date_labels = format tanggal, refensi bisa lihat disini
+[\<https://strftime.org/>](https://strftime.org/){.uri}
+
+Contoh: `scale_x_date(date_breaks = "1 week", date_labels = "%m-%d")`
+
+```{r}
+# Please type your code down below
+
+```
+
+Step 6: Mengatur sumbu X dengan menggunakan fungsi `scale_y_continous()`
+
+Parameter yang dapat digunakan: - `breaks(seq(..,..,..))`
+
+Contoh: `scale_y_continuous(breaks = seq(3, 27, 3))`
+
+```{r}
+# Please type your code down below
+
+```
+
+Step 7: Make it better
+
+```{r}
+# Please type your code down below
+
+```
+
+------------------------------------------------------------------------
+
+Pertanyaan:
+
+-   Apakah barplot bisa untu visualisasi dengan additional kolom selain
+    default dari plot
+-   Apakah sudah ada parameter untuk mengdefine 2 size di labs
