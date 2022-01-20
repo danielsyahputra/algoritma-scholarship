@@ -1211,7 +1211,11 @@ ggplot(data = publish_category, mapping = aes(x = freq, y = reorder(kategori, fr
        x = "Frekuensi",
        y = 'Kategori',
        color="rentang") + 
-  theme_clean()
+  scale_fill_brewer(palette = "Set2")+
+  theme_minimal()+
+  theme(legend.position = "top")+
+  geom_text(aes(label = freq, group = rentang),
+            position=position_dodge(.9))
 ```
 
 Insigth:
@@ -1261,16 +1265,24 @@ ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, valu
 # Tambahkan facet untuk scales = free
 ggplot(data = vids.agg.long, mapping = aes(x = value, y = reorder(kategori, value))) +
   geom_col(mapping = aes(fill = name), 
-           position = "fill") + 
+           position = "dodge") + 
   scale_fill_manual(values = c("red", "orange")) + 
   facet_wrap(facets = ~ name, scales = "free") + 
   theme_clean()
 ```
 
+Tambahan:
+
+```{r}
+ggplot(vids.agt, aes(x = dislike_ratio, y = like_ratio)) +
+  geom_jitter(aes(size = views, col = likes)) +
+  facet_grid(publish_day ~ category_id) 
+```
+
 ## Line chart
 
 Business Case: Bagaimana trending dari konten dengan kategori `Comedy`,
-`Education`,dan `Sciennce and technology` dari hari ke hari.
+`Education`,dan `Science and Technology` dari hari ke hari.
 
 Hint:
 
@@ -1280,8 +1292,18 @@ Step 1: Mari kita persiapkan datanya dengan conditional subseting dengan
 memanfaatkan `%in%`
 
 ```{r}
+unique(vids$category_id)
+```
+
+```{r}
 # Please run the code down below
-vids.ces <- 
+categories <- c("Comedy", "Education", "Science and Technology")
+vids.ces <- vids[vids$category_id %in% categories, ]
+head(vids.ces)
+```
+
+```{r}
+unique(vids.ces$category_id)
 ```
 
 Step 2: Menghilangkan levels yang tidak diperlukan dengan menggunkan
@@ -1289,7 +1311,8 @@ fungsi `droplevels()`
 
 ```{r}
 # Please run the code down below
-vids.ces$category_id <- 
+vids.ces$category_id <- droplevels(vids.ces$category_id)
+unique(vids.ces$category_id)
 ```
 
 Step 3: Mari kita coba hitung kemunculan video yang trending dengan
@@ -1297,14 +1320,18 @@ menggunkan fungsi `table()`
 
 ```{r}
 # Please run the code down below
-vids.ces <- 
+vids.ces <- as.data.frame(table(vids.ces$category_id, vids.ces$trending_date))
+colnames(vids.ces) <- c("Kategori", "TrendingDate", "Freq")
+vids.ces
 ```
 
 Step 4: Mari kita buat plotnya dengan menggunakan `geom_line()`
 
 ```{r}
 # Please type your code down below
-ggplot(data = , mapping = aes(x = , y = Freq, color = )) 
+ggplot(data = vids.ces, mapping = aes(x = ymd(TrendingDate), y = Freq)) +
+  geom_line(aes(color = Kategori)) +
+  theme_clean()
 
 ```
 
@@ -1312,7 +1339,10 @@ Step 5: Mari kita buat plotnya dengan menggunakan `geom_point()`
 
 ```{r}
 # Please type your code down below
-
+ggplot(data = vids.ces, mapping = aes(x = ymd(TrendingDate), y = Freq)) +
+  geom_line(aes(color = Kategori)) +
+  geom_point() + 
+  theme_clean()
 ```
 
 Step 6: Mengatur sumbu X dengan menggunakan fungsi `scale_x_date()`
@@ -1325,7 +1355,11 @@ Contoh: `scale_x_date(date_breaks = "1 week", date_labels = "%m-%d")`
 
 ```{r}
 # Please type your code down below
-
+ggplot(data = vids.ces, mapping = aes(x = ymd(TrendingDate), y = Freq)) +
+  geom_line(aes(color = Kategori)) +
+  geom_point() + 
+  scale_x_date(date_breaks = "1 week", date_labels = "%m-%d") +
+  theme_clean()
 ```
 
 Step 6: Mengatur sumbu X dengan menggunakan fungsi `scale_y_continous()`
@@ -1336,20 +1370,189 @@ Contoh: `scale_y_continuous(breaks = seq(3, 27, 3))`
 
 ```{r}
 # Please type your code down below
-
+ggplot(data = vids.ces, mapping = aes(x = ymd(TrendingDate), y = Freq)) +
+  geom_line(aes(color = Kategori)) +
+  geom_point() + 
+  scale_x_date(date_breaks = "1 week", date_labels = "%m-%d") +
+  scale_y_continuous(breaks = seq(3, 27, 3)) + 
+  theme_clean()
 ```
 
 Step 7: Make it better
 
 ```{r}
 # Please type your code down below
-
+ggplot(data = vids.ces, mapping = aes(x = ymd(TrendingDate), y = Freq)) +
+  geom_line(aes(color = Kategori)) +
+  geom_point() + 
+  scale_x_date(date_breaks = "1 week", date_labels = "%m-%d") +
+  scale_y_continuous(breaks = seq(3, 27, 3)) + 
+  #theme(axis.text.x = element_text(angle = 45)) +
+  labs(title = "Frequency of Category Vs Trending Date",
+       subtitle = "Youtube Trending Data",
+       x = "Trending Date",
+       y = 'Frequency') + 
+  theme_clean() +
+  theme(plot.title = element_text(hjust = 0.5, face="bold"),
+        plot.subtitle = element_text(hjust = 0.5, face = "bold"), 
+        legend.position = "top")
 ```
 
 ------------------------------------------------------------------------
 
 Pertanyaan:
 
--   Apakah barplot bisa untu visualisasi dengan additional kolom selain
+-   Apakah barplot bisa untuk visualisasi dengan additional kolom selain
     default dari plot
 -   Apakah sudah ada parameter untuk mengdefine 2 size di labs
+
+**DIVE DEEPER**
+
+Business Case: Coba visualisasikan trending dari konten kategori
+`Gaming`, `Entertainment`,dan `Music` dengan menggunakan line plot dari
+tanggal *2018-01-01*.
+
+Additional Task!
+
+-   Gunakan fungsi `scale_x_date()` dengan date breaks = 2 hari
+-   Gunakan fungsi `labs()`, untuk membuat tampilan dari visualisasi
+    lebih rapi
+-   Coba tarik insight dari hasil visualisasi yang dibuat
+
+```{r}
+# Please type your code down below
+unique(vids$category_id)
+
+```
+
+```{r}
+categories <- c("Gaming", "Entertainment", "Music")
+filtered_vids <- vids[(vids$category_id %in% categories & vids$trending_date >= "2018-01-01"), ]
+filtered_vids$category_id <- droplevels(filtered_vids$category_id)
+trending_categories <- as.data.frame(table(filtered_vids$category_id, filtered_vids$trending_date))
+colnames(trending_categories) <- c("Kategori", "TrendingDate", "Freq")
+head(trending_categories)
+```
+
+```{r}
+ggplot(data = trending_categories, mapping = aes(x = ymd(TrendingDate), y = Freq)) +
+  geom_line(aes(color = Kategori)) +
+  geom_point(shape=21, color="black", fill="#69b3a2", size=2) + 
+  scale_x_date(date_breaks = "2 day", date_labels = "%m-%d") +
+  scale_y_continuous(breaks = seq(0, 70, 5)) + 
+  labs(title = "Trending Konten: Entertainment Vs Gaming Vs Music (2018)",
+       subtitle = "Source: Youtube Trending Data",
+       x = "Tanggal Trending",
+       y = 'Frekuensi') + 
+  theme_clean() +
+  theme(plot.title = element_text(hjust = 0.5, face="bold"),
+        plot.subtitle = element_text(hjust = 0.5, face = "bold", size = 10), 
+        legend.position = "top",
+        axis.text.x = element_text(angle = 15))
+```
+
+Insight:
+
+-   Channel dengan kategori Entertainment yang paling diminati dibanding
+    2 kategori lainnya.
+
+-   Perubahan frekuensi dari hari ke hari pada kategori Gaming cukup
+    stabil dibandingkan 2 kategori lainnya.
+
+-   
+
+# \[Opt\] Interactive Map with `leaflet`
+
+Kita dapat membuat interactive map dengan bantuan package `leaflet`.
+Leaflet sendiri adalah open-source JavaScript library untuk pembuatan
+interactive maps.
+
+Contoh sederhana:
+
+```{r}
+#install.packages("leaflet")
+library(leaflet)
+
+# get icon
+ico <- makeIcon(
+    iconUrl = "https://algorit.ma/wp-content/uploads/2017/07/logo_light_trans.png",
+    iconWidth=177/2, iconHeight=41/2
+)
+
+# make dummy data
+set.seed(418)
+loca <- data.frame(lat=runif(5, min = -6.24, max=-6.23),
+                   lng=runif(5, min=106.835, max=106.85))
+
+# check data
+loca
+```
+
+```{r}
+# create a leaflet map widget
+map1 <- leaflet()
+
+# add tiles from open street map
+map1 <- addTiles(map1)
+
+# add markers
+map1 <- addMarkers(map1, data = loca, icon=ico)
+
+map1
+```
+
+```{r}
+# prepare pop-up
+pops <- c(
+    "<h3>Algoritma Main HQ</h3><p>Visit us here!</p>",
+    "<strong>Algoritma Business Campus</strong>", 
+    "<h3>In-Construction</h3><p>New Secondary Campus</p>",
+    "<strong>Secondary Campus</strong>",
+    "<strong>The Basecamp (business-school)</strong>"
+)
+```
+
+```{r}
+# make new leaflet
+map2 <- leaflet()
+map2 <- addTiles(map2)
+map2 <- addMarkers(map2, data = loca, icon=ico, popup = pops)
+
+map2
+```
+
+Berikut adalah website dan referensi yang dapat mempermudah pemahaman
+kita mengenai leaflet:
+
+-   [Leaflet for R](https://rstudio.github.io/leaflet/)
+-   [Creating Choropleth Map for Geocoding in
+    R](https://algotech.netlify.com/blog/creating-choropleth-with-mapshaper-and-r/)
+
+# Further Readings
+
+Berikut adalah referensi-referensi lain dan website yang dapat
+memudahkan kita untuk mengekplorasi seputar data visualisasi di R:
+
+-   [ggplot2: Elegant Graphics for Data Analysis by Hadley
+    Wickham](https://ggplot2-book.org/)
+
+-   [Data-to-Viz](https://www.data-to-viz.com/): ragam tipe data dan
+    plot yang cocok untuk data tersebut, dilengkapi contoh plot dan
+    coding
+
+-   [Algotech - Rplicate
+    Series](https://algotech.netlify.app/tags/rplicate/)
+
+-   [ggplot2 extensions](https://exts.ggplot2.tidyverse.org/):
+    fitur-fitur tambahan yang bisa diintegrasi dengan ggplot2
+
+-   [Eye Dropper Chrome
+    extensions](https://chrome.google.com/webstore/detail/eye-dropper/hmdcmlfkchdmnmnmheododdhjedfccka):
+    untuk memudahkan memilih warna costum dari internet
+
+-   [HTML ColorCodes](https://htmlcolorcodes.com): untuk memilih warna
+    costum dari internet
+
+-   
+
+    ## [Color Palette](https://www.nceas.ucsb.edu/sites/default/files/2020-04/colorPaletteCheatsheet.pdf)
