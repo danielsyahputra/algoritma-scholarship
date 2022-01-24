@@ -1,0 +1,462 @@
+---
+title: "IP : Inclass Material"
+author: "Inayatus"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    number_section: true
+    theme: united
+    highlight: zenburn
+    css: assets/style.css
+    mathjax: null
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      comment = "#>")
+```
+# Training Objective
+
+```{r workflow, eval=FALSE}
+knitr::include_graphics("assets/Interactive Plotting.png")
+```
+
+Dalam melakukan visualisasi yang siap untuk publikasi, hal-hal yang harus dilakukan adalah:
+
+```{r workflow, eval=FALSE}
+knitr::include_graphics("assets/Workflow-ip.png")
+```
+
+# Data Wrangling pada Package `dplyr`
+
+Beberapa wrangling data sudah pernah kita pelajari menggunakan fungsi base R yaitu :
+
+* seleksi kolom
+* seleksi baris
+* agregasi data
+* mengurutkan value dari kolom
+* membuat kolom baru
+* mengubah tipe data pada suatu kolom
+
+Pada eksplorasi kali ini, akan digunakan satu package bernama [tidyverse](https://www.tidyverse.org/), yang mengusung konsep tidy dalam transformasi data. Adapun di dalam `tidyverse`, terdapat package-package yang umum digunakan untuk transformasi data, yakni `ggplot2`, `dplyr`, `tidyr`, `readr`, `purrr`, `tibble`, `stringr`, dan `forcats`.
+
+```{r}
+# install.packages("tidyverse")
+library(tidyverse)
+library(glue)
+library(plotly)
+```
+
+Data transformasi dan data wrangling adalah suatu hal yang cukup krusial dalam melakukan persiapan data untuk dibuat suatu visualisasi atau analisis lanjutan. Salah satu *package* yang cukup useful dan akan kita gunakan saat ini adalah `dplyr`; yang juga masuk dalam environment yang besar `tidyverse`.
+
+## Read Data
+
+Cara untuk melakukan read data kita akan menggunakan `read_csv` dari package `readr`. Keunggulannya adalah:
+1. Kelas datanya sudah disesuaikan dengan sendirinya, terutama yang memiliki tipe data `date`.   
+2. Saat membaca datanya, kita memperoleh beberapa informasi dari beberapa kolom yang ada pada data kita beserta dengan kelas datanya.   
+
+Kali ini, kita akan menggunakan dataset dari [#tidytuesday](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-03-05), yakni "Women in the workplace" dari biro statistik tenaga kerja dan biro sensus.
+
+```{r eval=FALSE} 
+# read data menggunakan `read.csv()` dan melihat struktur data
+workers <- read.csv("data_input/jobs_gender.csv")
+```
+
+```{r}
+head(workers)
+```
+
+
+```{r, message=TRUE, warning=TRUE}
+
+# read data menggunakan `read_csv()`
+library(readr)
+
+```
+Setelah membaca data, agar data siap untuk digunakan untuk visualisasi data terkadang beberapa hal ini sering dilakukan:
+* cek tipe data -> `glimpse()`
+* mengganti tipe data dan menambahkan kolom -> `mutate()`
+* subsetting kolom -> `select()`
+* filtering baris -> `filter()`
+* melakukan agregasi data -> `group_by()` - `summarise()` - `ungroup()`
+* mengurutkan data -> `arrange()`
+
+Beberapa dari fungsi diatas akan kita coba untuk membiasakan diri melakuan wrangling data menggunakan fungsi-fungsi dari package `dplyr`.
+
+## Melihat Struktur Data Menggunakan `glimpse()`
+
+Jika sebelumnya untuk melihat struktur data menggunakan `str()` pada base R.
+```{r}
+# dplyr
+
+```
+
+Deskripsi variabel:
+- `year`: Tahun
+- `occupation`: Posisi/pekerjaan tertentu 
+- `major_category`: Departemen/divisi
+- `minor_category`: Sub-departemen/sub-divisi
+- `total_workers`: Total pekerja (full time, di atas 16 tahun)
+- `workers_male`: Total pekerja pria (full time, di atas 16 tahun)
+- `workers_female`: Total pekerja wanita (full time, di atas 16 tahun)
+- `percent_female`: Persentasi (proporsi) pekerja wanita untuk setiap posisi/pekerjaan tertentu
+- `total_earnings`: Median pendapatan setiap pekerja (full time, di atas 16 tahun)
+- `total_earnings_male`: Median pendapatan setiap pekerja pria (full time, di atas 16 tahun)
+- `total_earnings_female`: Median pendapatan setiap pekerja wanita (full time, di atas 16 tahun)
+- `wage_percent_of_male`: Rasio persentase pendapatan wanita dengan pria, bernilai NA untuk posisi/pekerjaan yang ukuran sampelnya kecil. 
+
+
+## Subsetting Columns Menggunakan `select()`
+
+Coba subset data `workers` berdasarkan kolom `year`, `occupation`, dan `total_workers`.
+
+* untuk subsetting column pada fungsi base R bisa menggunakan `["baris","kolom"]`
+```{r}
+# subset base R
+
+```
+
+* `select()` : untuk subsetting column
+```{r}
+# subset dplyr
+
+```
+
+Misal kita ingin membuang kolom `major_category`, dan `wage_percent_of_male`
+```{r}
+
+```
+
+
+## Subsetting Row Menggunakan`filter()`
+
+Coba subset data pekerja yang ada pada tahun 2015 saja. 
+
+```{r}
+# subset row base R
+
+```
+
+* `filter()` : melakukan subsetting berdasarkan baris
+```{r}
+# subset row dplyr
+
+```
+
+Misalkan kita ingin melakukan subsetting berdasarkan pekerja pada tahun 2015 dan yang memiliki median pendapatan lebih dari 30000.
+
+
+```{r}
+
+```
+
+Pada fungsi `filter()` :
+* `,` sama dengan notasi AND (`&`)
+* `|` sama dengan notasi OR (`|`)
+
+Keunggulan menggunakan `filter()` adalah mengurangi penulisan ulang nama object data dan penggunaan `$`. 
+
+
+## Konsep Piping ( %>% )
+
+Tidying data menggunakan `dplyr` terdapat satu fungsi yang digunakan untuk mempermudah dalam melakukan tidying data yaitu piping ( `%>%` ). Analogi dari piping seperti ini:
+
+Misal saya dari bangun tidur ingin pergi ke suatu tempat, kegiatan apa saja yang saya lakukan?
+
+1. bangun
+2. mandi
+3. ganti baju
+4. makan
+5. siap-siap pergi
+6. pergi
+
+
+
+Jika kita terapkan dalam sebuah fungsi dan code, anggap beberapa fungsi yang kita miliki adalah:
+
+* bangun()
+* mandi()
+* ganti_baju()
+* makan()
+* siap_pergi()
+* pergi()
+
+Maka jika kita ingin pergi dan mengaplikasikan dari beberapa fungsi serta step diatas:
+
+* tanpa piping
+```{r eval=FALSE}
+pergi(siap_pergi(makan(ganti_baju(mandi(bangun(saya))))))
+```
+
+Jika kita menggunakan piping ( `%>%` ):
+
+* shortcut untuk membuat piping ( `%>%` ) -> ctrl+shift+m
+
+```{r eval=FALSE}
+saya %>% 
+  bangun() %>% 
+  mandi() %>% 
+  ganti_baju() %>% 
+  makan() %>% 
+  siap_pergi() %>% 
+  pergi()
+```
+
+Misalkan dari data `workers` kita ingin pilih kolom `year`, `major_category`, `total_workers`, dan `total_earnings`, dengan kondisi total pendapatan diatas 10,000 dan ditahun 2014-2015. 
+
+```{r}
+
+```
+
+
+## Data Manipulation Menggunakan `mutate()`
+
+Dalam melakukan data manipulation, kita bisa melakukan manipulasi terhadap class dari kolom atau menambahkan kolom baru pada data.
+
+Pada data `workers` kolom `occupation` masih tersimpan dalam tipe data karakter. Kita akan mengubah tipe data kolom tersebut kedalam factor.
+
+```{r}
+# base R
+
+```
+
+* `mutate()` : untuk melakukan manipulasi data pada kolom atau menambahkan kolom baru (menggantikan penggunaan `$` pada code base)
+```{r}
+# dplyr
+
+```
+
+---
+
+**Latihan**
+
+*Est. waktu 3-5 menit
+
+Silahkan lakukan praproses data pada data `workers` dengan beberapa fungsi `dplyr` yang sudah dipelajari.
+1. Mengubah kolom yang bertipe character menjadi factor
+2. Mengubah tipe data kolom `year` menjadi factor
+3. Melakukan pengambilan data pekerja yang memiliki `major_category` "Computer, Engineering, and Science"
+4. Sajikan data frame tersebut dengan 5 kolom diantaranya `year`, `occupation`, `minor_category`, `workers_female`, dan `workers_male`
+
+```{r}
+# your code here
+
+```
+
+---
+
+Untuk kebutuhan analisis, kita akan melakukan wrangling data seperti diatas namun tanpa melakukan filtering maupun selecting kolom. 
+
+```{r}
+
+```
+
+**!!!** Untuk menyimpan perubahan jangan lupa di assign ke dalam sebuah object.
+
+**!!!** Tips, jangan menyimpan hasil cleansing data pada nama objek yang sama supaya apabila ingin melakukan perubahan yang lainnya, maka tidak perlu mengulang dari import data.
+
+## Agregasi Data
+
+Dalam melakukan agregasi data, kita bisa menggunakan `aggregate()`, tujuannya untuk melakukan hasil summary data berdasarkan nilai dari kolom tertentu.
+
+Coba berikan summary nilai rata-rata pendapatan berdasarkan masing-masing divisinya.
+
+```{r}
+# base
+
+```
+
+Menggunakan `dplyr` kita akan memanfaatkan beberapa fungsi berikut ini:
+
+* `group_by()`, `summaries()`, & `ungroup()` : fungsi yang sama untuk melakukan aggregate data
+* `group_by()` : untuk melakukan grouping data berdasarkan kolom tertentu
+* `summarise()` : untuk menghasilkan summary dari data setelah group_by atatu tanpa group_by
+* `ungroup()` : untuk unsetting `group_by()` / melepas efek `group_by()` (bisa dilakukan bisa tidak)
+
+```{r}
+# dplyr
+
+```
+
+### Reorder Data Menggunakan `arrange()`
+
+Dari hasil agregasi data diatas dirutukan berdasarkan rata-rata pendapatan tertinggi ke terendah
+
+```{r}
+# base R
+
+```
+
+
+```{r}
+# dplyr
+
+```
+
+---
+**Latihan**
+
+*Est. waktu 3-5 menit
+
+Dari beberapa `major_category` yang ada, Mbak Dwi ingin melakukan analisa terhadap pendapatan tertinggi dari masing-masing divisi pada pekerja di tahun 2016. Divisi manakah yang memiliki pendapatan tertinggi? 
+
+```{r}
+# your code here
+
+```
+
+---
+
+Keunggulan dari `group_by()`, `summaries()`, & `ungroup()` :
+
+* bisa membuat summary data dari suatu kolom tertentu tanpa membuat kolom baru pada data asli kita
+* fungsi `ungroup()` harus disertakan ketika kita ingin melakukan perhitungan ulang tanpa terpengaruh efek dari `group_by()` nya
+
+### Why Using `ungroup()`
+
+Contoh: 
+
+Misal dari data `workers`, kita ingin menambahkan 1 kolom berisi informasi rata-rata dari jumlah pendapatan(`total_earnings`) masing-masing divisi (`major_category`) dan ingin menambahkan satu kolom berisi informasi jumlah pekerja perempuan dari seluruh data yang ada.
+
+* Jika tanpa `ungrop()`
+
+```{r}
+workers_clean %>% 
+  group_by(major_category) %>% 
+  mutate(mean_earn = mean(total_earnings)) %>% 
+  mutate(tot_fwork = sum(workers_female)) %>% 
+  select(major_category, mean_earn, tot_fwork)
+```
+
+* Jika menggunakan `ungroup()`
+
+```{r}
+workers_clean %>% 
+  group_by(major_category) %>% 
+  mutate(mean_earn = mean(total_earnings)) %>% 
+  ungroup() %>% 
+  mutate(tot_fwork = sum(workers_female)) %>% 
+  select(major_category, mean_earn, tot_fwork)
+```
+
+📌 **Key Point!!**
+
+`ungroup()` berfungsi ntuk melepas grouping yang dilakukan, supaya tidak berpengaruh terhadap fungsi yang dilakukan selanjutnya. Seperti kedua output di atas terlihat bahwa jika tidak dilakukan `ungroup()` maka fungsi yang dilakukan selanjutnya dilakukan untuk setiap group.
+
+
+**Note perbedaan `mutate()` dan `summarise()`**:
+
+* `summarise()` : digunakan untuk membuat kolom baru yang berisi rangkuman dari pengelompokan suatu kolom. (outputnya berupa tabel/data baru)
+* `mutate()` : digunakan untuk membuat kolom baru yang berisi masing-masing nilai per baris dari data. (outputnya berupa kolom baru dalam data yang sama)
+
+## Cek Missing Value
+
+Missing value merupakan suatu data yang kosong yang dapat disebabkan oleh data yang memang tidak ada atau kesalahan dalam inputasi data. Untuk melakukan pengecekan missing value kita dapat menggunakan `is.na()` atau `anyNA()`.
+
+```{r}
+
+```
+
+### Handling Missing Values
+
+Cara untuk mengatasi adanya missing values:
+
+1. Full analysis, jika jumlah dari missing value < 5% observasi data, maka kita dapat membuang observasi tersebut. Untuk membuat observasi yang terdapat missing values dapat menggunakan fungsi `drop_na()` atau `na.omit()`.
+2. Imputation, mengisi nilai NA menggunakan suatu pengukuran nilai, bisa mean, median, modus, atau lain sebagainya sesuai dengan pertimbangan bisnis.
+3. Deletion, jika jumlah missing value > 50% pada suatu variabel, maka kita bisa menghapus variabel tersebut.
+
+Pada case data `workers_clean` diatas, kita akan melakukan penghapusan observasi data dan penghapusan variabel yang terlalu banyak berisi missing values.
+
+* hitung persentase missing values
+```{r}
+
+```
+
+* menghapus kolom `wage_percent_of male`
+```{r}
+
+```
+
+* menghapus baris yang NA
+```{r}
+
+```
+
+
+### 🧠 Dive Deeper
+
+*Est. waktu 10-15 menit
+
+1. Berdasarkan data `workers_clean`, berapakah rata-rata perbedaan pendapatan (gap earning) yang diperoleh oleh pegawai laki-laki dengan perempuan untuk masing-masing divisi di tahun 2016? Visualisasikan!
+2. Berapakah jumlah divisi yang didominasi oleh pegawai perempuan dibandingkan dengan pekerja laki-laki? 
+3. Bagaimana distribusi pendapatan pegawai berdasarkan jenis kelaminnya pada tahun 2016?
+
+```{r}
+# your code here
+
+```
+
+## Knowledge Check dan Summary
+
+Berikut ini terdapat beberapa nama fungsi untuk wrangling data dari package `tidyverse`
+
+1. `filter()`
+2. `glimpse()`
+3. `drop_na()`
+4. `read_csv()`
+5. `select()`
+6. `mutate()`
+7. `arrange()`
+8. `group_by()`
+9. `ungroup()`
+10. `summarise()`
+
+Berikut ini kegunaan dari beberapa fungsi diatas
+
+a. membaca data csv 
+b. melakukan pemilihan kolom atau penghapusan kolom
+c. melakukan penghapusan missing value berdasarkan kolom tertentu
+d. melakukan agregasi dengan mengelompokkan data berdasarkan kelompok tertentu
+e. membuat kolom baru berisi hasil agregasi data berdasarkan kolom tertentu
+f. melihat struktur data
+g. menghilangkan efek dari `group_by()`
+h. mengurutkan nilai suatu data berdasarkan kolom tertentu
+i. melakukan transformasi kolom atau membuat kolom baru
+j. melakukan subseting data berdasarkan kondisi tertentu pada data
+
+Manakah pasangan nama fungsi dan kegunaan fungsinya yang tepat?
+
+JAWABAN:
+
+1. `filter()` ?
+2. `glimpse()` ?
+3. `drop_na()` ?
+4. `read_csv()` ?
+5. `select()` ?
+6. `mutate()` ?
+7. `arrange()` ?
+8. `group_by()` ?
+9. `ungroup()` ? 
+10. `summarise()` ?
+
+---
+<center> **END OF DAY 1** </center>
+---
+
+### Publikasi dengan flexdashboard
+
+- [Tidyverse](https://www.tidyverse.org/)
+- [Cheatsheets: data wrangling with dplyr](https://rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+- [Plotly Configuration](https://plot.ly/r/configuration-options/)
+- [Learn Flex Dashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html)
+- [Learn Story](https://rmarkdown.rstudio.com/flexdashboard/using.html#storyboards)
+- [Shiny Dashboard](https://rstudio.github.io/shinydashboard/get_started.html)
+- [Icon Dashboard](https://fontawesome.com/icons?d=gallery)
+
+
+
