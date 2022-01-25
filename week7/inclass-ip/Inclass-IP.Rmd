@@ -37,7 +37,7 @@ Beberapa wrangling data sudah pernah kita pelajari menggunakan fungsi base R yai
 
 Pada eksplorasi kali ini, akan digunakan satu package bernama [tidyverse](https://www.tidyverse.org/), yang mengusung konsep tidy dalam transformasi data. Adapun di dalam `tidyverse`, terdapat package-package yang umum digunakan untuk transformasi data, yakni `ggplot2`, `dplyr`, `tidyr`, `readr`, `purrr`, `tibble`, `stringr`, dan `forcats`.
 
-```{r}
+```{r message=FALSE}
 # install.packages("tidyverse")
 library(tidyverse)
 library(glue)
@@ -227,13 +227,13 @@ Jika kita menggunakan piping ( `%>%` ):
 -   shortcut untuk membuat piping ( `%>%` ) -> ctrl+shift+m
 
 ```{r eval=FALSE}
-saya %>% 
-  bangun() %>% 
-  mandi() %>% 
-  ganti_baju() %>% 
-  makan() %>% 
-  siap_pergi() %>% 
-  pergi()
+# saya %>% 
+#   bangun() %>% 
+#   mandi() %>% 
+#   ganti_baju() %>% 
+#   makan() %>% 
+#   siap_pergi() %>% 
+#   pergi()
 ```
 
 Misalkan dari data `workers` kita ingin pilih kolom `year`, `major_category`, `total_workers`, dan `total_earnings`, dengan kondisi total pendapatan diatas 10,000 dan ditahun 2014-2015.
@@ -516,6 +516,10 @@ workers_clean %>%
 
 Flow Nomor 2:
 
+```{r}
+
+```
+
 Flow Nomor 3:
 
 ```{r}
@@ -531,35 +535,7 @@ head(df)
 ```
 
 ```{r}
-df_2 <- df %>% 
-  group_by(major_category, name) %>% 
-  summarise(total = mean(value))
-df_2
-```
 
-```{r}
-library(ggthemes)
-ggplot(data = df_2, mapping = aes(x = major_category, y = reorder(total, name))) +
-  geom_col(mapping = aes(fill = name), 
-           position = "dodge") + 
-  labs(title = "Frekuensi Untuk Setiap Category dan Rentang Waktu",
-       subtitle = "Youtube Trending Data",
-       x = "Mean",
-       y = 'Kategori',
-       color="rentang") + 
-  scale_fill_brewer(palette = "Set2")+
-  theme_minimal()+
-  theme(legend.position = "top") + 
-  theme(plot.title = element_text(hjust = 0.5, face="bold"),
-        plot.subtitle = element_text(hjust = 0.5, face = "bold", size = 10), 
-        legend.position = "top",
-        axis.text.x = element_text(angle = 90))
-
-```
-
-```{r}
-ggplot(workers_clean, aes(x = total_earnings_male, y = total_earnings_female)) +
-  facet_grid(major_category ~ minor_category) 
 ```
 
 ## Knowledge Check dan Summary
@@ -608,6 +584,243 @@ JAWABAN:
 ---
 <center> **END OF DAY 1** </center>
 ---
+
+# Interactive Plot using `plotly`
+
+```{r}
+library(ggplot2) # pembuatan plot statis
+library(plotly) # buat plot interaktif
+library(glue) # utk setting tooltip
+```
+
+**Plot interaktif membolehkan user untuk berinteraksi dengan plot** dan menghasilkan visualisasi yang lebih **ringkas, namun tetap informatif dan menarik**. Kita dapat menggunakan library `plotly` untuk membuat plot interaktif di R.
+
+Link Official [Plotly](https://plotly.com/r/)
+
+Tahapan pembuatan interactive plot dengan mudah menggunakan `plotly`:
+
+1.  Business question
+2.  Siapkan data
+3.  Mmebuat ggplot
+4.  Ubah objek ggplot menjadi plotly menggunakan `ggplotly()`
+
+Sebelumnya kita telah menyiapkan 3 business question. Mari visualisasikan 3 hasil business question tersebut menggunakan interactive plotting.
+
+## Plot 1 : Gap Earning
+
+**BQ** Berapakah rata-rata perbedaan pendapatan (gap earning) yang diperoleh oleh pegawai laki-laki dengan perempuan untuk masing-masing divisi di tahun 2016?
+
+Data yang akan digunakan.
+
+```{r}
+case1 <- workers_clean %>% 
+  mutate(gap_earning = total_earnings_male - total_earnings_female) %>% 
+  filter(year == 2016) %>% 
+  group_by(major_category) %>% 
+  summarise(mean_gap_earning = mean(gap_earning)) %>% 
+  ungroup()
+  
+```
+
+```{r}
+case1
+```
+
+```{r}
+case2 <- workers_clean %>% 
+  filter(workers_female > workers_male) %>% 
+  group_by(major_category) %>% 
+  summarise(n_position = n()) %>% 
+  arrange(desc(n_position))
+```
+
+```{r}
+case3 <- workers_clean %>% 
+  filter(year == 2016) %>% 
+  pivot_longer(cols = c("total_earnings_male", "total_earnings_female"), 
+               names_to = "gender", 
+               values_to = "total_earnings_male_female",
+               names_prefix = "total_earnings_") %>% 
+  select(gender, total_earnings_male_female)
+```
+
+Membuat visualisasi ggplot.
+
+```{r}
+plot_case1 <- case1 %>% 
+  ggplot(aes(x = mean_gap_earning, y = reorder(major_category, mean_gap_earning)))+
+  geom_col(aes(fill = mean_gap_earning), show.legend = F) + 
+  scale_fill_gradient(low="#fff2cd", high="firebrick") + 
+  labs(title = "Mean Gap Earning", 
+       subtitle = "Pegawai Laki-laki dan Perempuan Tahun 2016",
+       x = "Mean Gap Earning", 
+       y = "Divisi") +
+  theme_clean()
+```
+
+Membuat interactive plot menggunakan `ggplotly()`
+
+```{r}
+ggplotly(plot_case1)
+```
+
+### Setting up Tooltip Text
+
+Tooltip adalah text yang muncul ketika kita melakukan hover kursor pada plot visual kita. Terkadang tooltip yang dihasilkan belum terlalu rapi, sehingga perlu melakukan setting up tooltip text yang akan di inputkan.
+
+Kita dapat mempersiapkan informasi yang ingin ditampilkan pada kolom baru di data, kemudian meng-embed nya pada fungsi `ggplotly()`. Berikut ini cara untuk melakukan setting up tooltip text:
+
+-   bisa dengan menambahkan kolom khusus untuk membuat tooltip text
+-   bisa membuatnya pada saat membuat visualisasi
+
+Tahapan:
+
+1.  Mempersiapkan data: menambahkan kolom berisi informasi tooltip
+2.  Membuat ulang ggplot
+3.  Membuat ulang ggplotly
+
+```{r}
+# menambahkan kolom berisi informasi tooltip
+case1 <- case1 %>% 
+  mutate(text = glue("Mean Gap Earning: {round(mean_gap_earning, 2)}"))
+```
+
+```{r}
+# buat ulang ggplot
+plot_case1 <- case1 %>% 
+  ggplot(aes(x = mean_gap_earning, 
+             y = reorder(major_category, mean_gap_earning),
+             text = text))+
+  geom_col(aes(fill = mean_gap_earning), show.legend = F) + 
+  scale_fill_gradient(low="#fff2cd", high="firebrick") + 
+  labs(title = "Mean Gap Earning", 
+       subtitle = "Pegawai Laki-laki dan Perempuan Tahun 2016",
+       x = "Mean Gap Earning", 
+       y = "Divisi") +
+  theme_clean()
+```
+
+```{r}
+# buat ulang plotly
+ggplotly(plot_case1, tooltip = "text")
+```
+
+```{r}
+plot_case1 <- case1 %>% 
+  ggplot(aes(x = mean_gap_earning, 
+             y = reorder(major_category, mean_gap_earning),
+             text = glue("Mean Gap Earning: {round(mean_gap_earning, 2)}")))+
+  geom_col(aes(fill = mean_gap_earning), show.legend = F) + 
+  scale_fill_gradient(low="#fff2cd", high="firebrick") + 
+  labs(title = "Mean Gap Earning", 
+       subtitle = "Pegawai Laki-laki dan Perempuan Tahun 2016",
+       x = "Mean Gap Earning", 
+       y = "Divisi") +
+  theme_clean()
+```
+
+```{r}
+ggplotly(plot_case1, tooltip = "text")
+```
+
+## Plot 2 : Women Major Category
+
+Pada data yang sudah dipersiapkan kasus 2, silahkan buatlah visualisasi semenarik mungkin sesuai keinginan hati Anda!
+
+**BQ**: Berapakah jumlah divisi yang didominasi oleh pegawai perempuan dibandingkan dengan pekerja laki-laki?
+
+```{r}
+head(case2)
+```
+
+```{r}
+# visualisasi
+plot_case2 <- case2 %>% 
+  ggplot(aes(x = n_position,
+             y = reorder(major_category, n_position),
+             text = glue("Jumlah Posisi Divisi: {n_position}"))) +
+  geom_segment(aes(x = 0, xend=n_position, yend= major_category), color="grey") +
+  geom_point(color="firebrick", size=2.5, alpha=0.6) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  ) + 
+  labs(title = "Jumlah Divisi", 
+       subtitle = "Pegawai Perempuan",
+       x = "Jumlah Posisi Divisi", 
+       y = "Divisi") +
+  theme_bw()
+```
+
+```{r}
+# interactive visualisation
+ggplotly(plot_case2, tooltip = "text")
+```
+
+## Plot 3 : Worker Distribution
+
+**BQ**: Bagaimana distribusi pendapatan pegawai berdasarkan jenis kelaminnya pada tahun 2016?
+
+```{r}
+# visualisasi
+options(scipen = 99)
+plot_case3 <- case3 %>% 
+  ggplot(aes(x = total_earnings_male_female)) + 
+  geom_density(aes(fill=gender, position = "identity", alpha = 0.8)) + 
+  theme_clean() +
+  labs(
+    title = "Sebaran Pendapatan Berdasarkan Gender", x = NULL, y = NULL
+  ) + 
+  scale_fill_brewer(palette = "Set2")
+```
+
+```{r}
+# interactive visualisasi
+ggplotly(plot_case3, tooltip = "x")
+```
+
+# Exporting Plots with `ggpubr`
+
+## `ggarrange()`
+
+`ggarrange()` : menggabungkan beberapa plot kedalam satu frame
+
+```{r}
+# arrange plot
+library(ggpubr)
+
+publicat <- ggarrange(plot_case1, plot_case2, plot_case3, nrow = 3)
+
+```
+
+```{r}
+publicat
+```
+
+```{r}
+
+```
+
+## `ggexport()`
+
+`ggexport()` : untuk menyimpan hasil visualisasi kedalam working directory
+
+Beberapa visualisasi terkadang ingin kita simpan baik dalam bentuk gambar maupun file pdf.
+
+```{r}
+# export plot
+ggexport(publicat, filename="qoppa_night.jpeg", width = 2400, height = 1500)
+```
+
+# `subplot()`
+
+Ada satu cara yang bisa digunakan ketika ingin melihat beberapa plot dalam satu frame namun dalam kondisi plot tersebut sudah interactive.
+
+```{r}
+# grouping interactive plot using subplot
+
+```
 
 ### Publikasi dengan flexdashboard
 
