@@ -647,6 +647,7 @@ case3 <- workers_clean %>%
 Membuat visualisasi ggplot.
 
 ```{r}
+library(ggthemes)
 plot_case1 <- case1 %>% 
   ggplot(aes(x = mean_gap_earning, y = reorder(major_category, mean_gap_earning)))+
   geom_col(aes(fill = mean_gap_earning), show.legend = F) + 
@@ -819,7 +820,7 @@ Ada satu cara yang bisa digunakan ketika ingin melihat beberapa plot dalam satu 
 
 ```{r}
 # grouping interactive plot using subplot
-
+subplot(plot_case1, plot_case2, plot_case3, nrows = 3)
 ```
 
 ### Publikasi dengan flexdashboard
