@@ -1,0 +1,13 @@
+name: workers_dash
+title: workers_dash
+username:
+account: danielsyahputra13
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5523958
+bundleId: 5514419
+url: https://danielsyahputra13.shinyapps.io/workers_dash/
+when: 1643292440.58458
+lastSyncTime: 1643292440.58462
+asMultiple: FALSE
+asStatic: FALSE
