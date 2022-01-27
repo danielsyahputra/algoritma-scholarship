@@ -57,15 +57,6 @@ case3 <- workers_clean %>%
 Overview
 ===
 
-## Row {data-height="400"}
-
-### Dataset of Women in Workplace
-
-```{r}
-library(DT)
-datatable(workers_clean)
-```
-
 ## Row {data-width="350"}
 
 ### Mean Gap Earning of Female vs Male in 2016
@@ -113,6 +104,17 @@ plot_case2 <- case2 %>%
 ```{r}
 ggplotly(plot_case2, tooltip = "text")
 ```
+
+
+## Row {data-height="400"}
+
+### Dataset of Women in Workplace
+
+```{r}
+library(DT)
+datatable(workers_clean)
+```
+
 
 Distribution
 ===
