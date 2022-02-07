@@ -1,0 +1,328 @@
+---
+title: "Inclass Material RM Qoppa Night Online"
+author: "Team Algoritma"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output: 
+  html_document:
+    theme: united
+    highlight: tango
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+# Import Library
+
+```{r, warning=F, message=F}
+library(dplyr)
+```
+
+**Knowledge Check**
+
+Dalam business case di lapangan, pemilihan variabel target biasanya
+dikaitkan dengan masalah bisnis yang ingin diselesaikan:
+
+Kasus 1:
+
+> Sebuah agen properti berusaha membangun sebuah model untuk menebak
+> harga sebuah properti untuk digunakan sebagai acuan kontrol untuk
+> menjaga harga pasar. Untuk itu, mereka mengembangkan sebuah model
+> dengan:
+
+-   Variabel target: Harga property
+-   Variabel prediktor: Faktor-fator yang memperngaruhinya (luas tanah,
+    lokasi, jumlah kamar, etc)
+
+Kasus 2:
+
+> Seorang pemilik restoran ingin menebak ingin menebak berapa banyak
+> penjualan yang akan dihasilkan di bulan depan oleh restorannya. Untuk
+> itu mereka mengembangkan sebuah model dengan kriteria:
+
+Variabel target: - Variabel prediktor: -
+
+Kasus 3:
+
+> Seorang pemilik restoran ingin menebak ingin menebak berapa banyak
+> penjualan yang akan dihasilkan di bulan depan oleh restorannya. Untuk
+> itu mereka mengembangkan sebuah model dengan:
+
+Variabel target: - Variabel prediktor: -
+
+# Supervised vs Unsupervised Learning
+
+1.  Supervised Learning: memiliki target variabel
+
+    -   Regression: target variabelnya numerik
+
+    -   Classification: target variabelnya kategorik
+
+2.  Unsupervised Learning: tidak memiliki target variabel
+
+    -   Clustering
+
+    -   Dimensionality Reduction
+
+# Exploratory Data Analysis
+
+Baca data `copiers`
+
+```{r}
+copiers <- read.csv("data_input/copiers.csv")
+```
+
+Copiers adalah online retailer yang fokus menjual alat tulis kantor
+(ATK).
+
+Mari lakukan investigasi data untuk melihat kolom/variable yang terdapat
+pada data tersebut.
+
+```{r}
+
+```
+
+Pada kasus ini kita ingin memprediksi profit dari data copiers:
+
+-   Variabel Target: profit
+-   Variabel Prediktor: variabel2 yang mempengaruhi profit
+    (faktor-faktor yang mempengaruhi profit)
+
+Sebelum melakukan analisa lebih lanjut, eksplorasi data perlu dilakukan
+terlebih dahulu. Salah satu teknik eksplorasi data awal adalah
+menggunakan histogram atau boxplot.
+
+Misal kita ingin cek sebaran data profit copiers
+
+```{r}
+
+```
+
+Kemudian, kita ingin cek sebaran data dari sales kita
+
+```{r}
+
+```
+
+Dari dua histogram di atas, dapat kita simpulkan bahwa terdapat
+pencilan/outliers pada variabel sales dan profit
+
+Cek data-data oulier untuk variabel Profit
+
+```{r}
+boxplot(copiers$Profit, graph = F)$out
+```
+
+Cek data-data outlier untuk variabel Sales
+
+```{r}
+
+```
+
+Bagaimana hubungan antara variable Profit dan Sales? Gunakan plot untuk
+melihat sebaran dari kedua variable tersebut, apakah ada insight yang
+bisa diambil?
+
+```{r}
+
+```
+
+Insight dari plot:
+
+-   
+
+# Modelling
+
+## Create Simple Linear Regression
+
+Simple linear regression = regresi dengan 1 variabel prediktor
+
+Formula dari simple linear regression:
+
+<center>
+
+$$\hat{y} = \beta_0 + \beta_1*x1$$
+
+</center>
+
+Keterangan :\
+$\hat{y}$ = target variabel yang ingin dipredisi\
+$\beta_0$ = intercept/constanta\
+$\beta_1$ = slope/gradient/coefficient/kemiringan\
+$x_1$ = variabel prediktor
+
+## \[Optional\] Ordinary Least Square
+
+Objective: Berusaha mencari nilai parameter b0 (intercept) dan b1
+(slope) untuk mendapatkan error/residual terkecil
+
+## Residual
+
+Residual atau error merupakan selisih dari nilai prediksi dengan nilai
+actual.
+
+-   Nilai prediksi:
+
+$$\hat{y} = \beta_0 + \beta_1*x $$
+
+-   residual:
+
+$$error = y - \hat{y}$$ Nilai error yang ingin diminimalkan dengan
+Ordinary Least Square adalah Sum of Squared Error (SSE). Disebut dengan
+Least Square karena ingin mendapatkan nilai kuadrat error (squared
+error) yang paling kecil/minimal.
+
+$$\sum^n_{i=1}(y_i - \hat{y}_i)^2$$
+
+Pertama-tama, mari kita cek untuk memprediksi Profit dengan dirinya
+sendiri (tanpa prediktor) `lm(formula = ..., data = ...)`
+
+```{r}
+
+```
+
+Notes: target \~ prediktor, ketika kita tanpa menggunakan prediktor,
+maka digunakan target \~ 1
+
+Bandingkan dengan mean profitnya
+
+```{r}
+
+```
+
+Kesimpulan:
+
+Dalam Simple Linear Regression, hanya digunakan **1 variabel
+prediktor**. `lm(formula = target~prediktor, data = ...)`
+
+Misal kita ingin memprediksi Profit (y) berdasarkan Salesnya (x)
+
+```{r}
+
+```
+
+Dari model di atas, didapat bahwa `intercept = -114.0625` dan koefisien
+`Sales = 0.4229`, sehingga model_ps menghasilkan formula
+
+<center>
+
+$$\hat{y} = \beta_0 + \beta_1*x1$$
+
+$$Profit =  -114.0625+ 0.4229*Sales$$
+
+</center>
+
+Dari formula di atas, apa kesimpulan yang bisa kita dapatkan?
+
+1.  
+
+2.  
+
+3.  
+
+Buatlah plot untuk melihat sebaran data berdsarkan model persamaan
+regresi yang dihasilkan
+
+```{r}
+
+```
+
+Salah satu metric untuk mengevaluasi model dari **simple linear
+regression**, dilihat **multiple r.squarednya** yang bisa diperoleh dari
+`summary(model)`
+
+```{r}
+
+```
+
+Multiple R-squared = - artinya Sales mampu menjelaskan - untuk variabel
+Profit, sisanya dijelaskan oleh variabel lain yang tidak dimasukkan ke
+dalam model
+
+Multiple R-Squared = Metric yang melihat seberapa baik variabel
+prediktor menangkap variansi dari variabel target.
+
+Adapun Multiple R2 adalah kuadrat dari nilai korelasi antara prediktor
+dan target
+
+```{r}
+
+```
+
+## Interpretation
+
+-   Residuals = Error
+-   Intercept = ... artinya, ketika salesnya 0, maka profit = ...
+-   Coef. Sales = ... arinya, ketika sales naik 1, maka berkontribusi
+    sebanyak ... terhadap profit
+
+## Predicting new data
+
+Prediksilah data Sales yang baru menggunakan model_ps. Misal saya
+memiliki Sales 2000, berapakah hasil prediksi Profit saya?
+
+```{r}
+
+```
+
+Berapakah Profit ketika perusahaan ketika sales = 300?
+
+```{r}
+
+```
+
+Fungsi predict, untuk memprediksi variabel prediktor (Sales) secara
+otomatis
+
+```{r}
+
+```
+
+Memprediksi nilai-nilai Sales yang terdapat pada objek `transaksi`
+
+```{r}
+transaksi <- data.frame(Sales = c(2000, 300, 1500, 4500))
+
+```
+
+Memprediksi nilai-nilai Sales pada data copiers, agar mendapatkan hasil
+**prediksi yang akan dibandingkan dengan nilai actual**
+
+```{r}
+
+```
+
+### **Dive Deeper**
+
+Membuat model_pd (model yang memprediksi profit berdasarkan variabel
+discount)
+
+```{r}
+
+```
+
+Rangkuman dari model_pd
+
+```{r}
+
+```
+
+Insight:
+
+Memprediksi data Discount dan membuat variabel baru di data copiers
+
+```{r}
+
+```
+
+Berapakah nilai R-Squared yang terdapat dalam model? Interpretasikan!
