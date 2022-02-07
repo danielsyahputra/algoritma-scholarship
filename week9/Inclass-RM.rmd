@@ -50,15 +50,10 @@ Kasus 2:
 > penjualan yang akan dihasilkan di bulan depan oleh restorannya. Untuk
 > itu mereka mengembangkan sebuah model dengan kriteria:
 
-Variabel target: - Variabel prediktor: -
+Variabel target: banyak penjualan yang dihasilkan di bulan depan.
 
-Kasus 3:
-
-> Seorang pemilik restoran ingin menebak ingin menebak berapa banyak
-> penjualan yang akan dihasilkan di bulan depan oleh restorannya. Untuk
-> itu mereka mengembangkan sebuah model dengan:
-
-Variabel target: - Variabel prediktor: -
+Variabel prediktor: menu, jumlah hari kerja, libur, jumlah kunjungan ke
+restoran, lokasi, dll.
 
 # Supervised vs Unsupervised Learning
 
@@ -82,6 +77,10 @@ Baca data `copiers`
 copiers <- read.csv("data_input/copiers.csv")
 ```
 
+```{r}
+head(copiers)
+```
+
 Copiers adalah online retailer yang fokus menjual alat tulis kantor
 (ATK).
 
@@ -89,7 +88,7 @@ Mari lakukan investigasi data untuk melihat kolom/variable yang terdapat
 pada data tersebut.
 
 ```{r}
-
+str(copiers)
 ```
 
 Pada kasus ini kita ingin memprediksi profit dari data copiers:
@@ -105,13 +104,13 @@ menggunakan histogram atau boxplot.
 Misal kita ingin cek sebaran data profit copiers
 
 ```{r}
-
+hist(copiers$Profit)
 ```
 
 Kemudian, kita ingin cek sebaran data dari sales kita
 
 ```{r}
-
+hist(copiers$Sales)
 ```
 
 Dari dua histogram di atas, dapat kita simpulkan bahwa terdapat
@@ -126,7 +125,7 @@ boxplot(copiers$Profit, graph = F)$out
 Cek data-data outlier untuk variabel Sales
 
 ```{r}
-
+boxplot(copiers$Sales, graph = F)$out
 ```
 
 Bagaimana hubungan antara variable Profit dan Sales? Gunakan plot untuk
@@ -134,12 +133,20 @@ melihat sebaran dari kedua variable tersebut, apakah ada insight yang
 bisa diambil?
 
 ```{r}
+plot(copiers$Profit, copiers$Sales)
+```
 
+```{r}
+cor(copiers$Profit, copiers$Sales)
 ```
 
 Insight dari plot:
 
--   
+-   Ada korelasi positif yang cukup kuat antara Profit dan Sales
+
+```{r}
+
+```
 
 # Modelling
 
@@ -188,7 +195,7 @@ Pertama-tama, mari kita cek untuk memprediksi Profit dengan dirinya
 sendiri (tanpa prediktor) `lm(formula = ..., data = ...)`
 
 ```{r}
-
+lm(formula = Profit ~ 1, data = copiers)
 ```
 
 Notes: target \~ prediktor, ketika kita tanpa menggunakan prediktor,
@@ -197,7 +204,7 @@ maka digunakan target \~ 1
 Bandingkan dengan mean profitnya
 
 ```{r}
-
+mean(copiers$Profit)
 ```
 
 Kesimpulan:
@@ -208,7 +215,8 @@ prediktor**. `lm(formula = target~prediktor, data = ...)`
 Misal kita ingin memprediksi Profit (y) berdasarkan Salesnya (x)
 
 ```{r}
-
+model_ps <- lm(formula = Profit ~ Sales, data = copiers)
+model_ps
 ```
 
 Dari model di atas, didapat bahwa `intercept = -114.0625` dan koefisien
@@ -224,17 +232,19 @@ $$Profit =  -114.0625+ 0.4229*Sales$$
 
 Dari formula di atas, apa kesimpulan yang bisa kita dapatkan?
 
-1.  
+1.  Model regresi yang dihasilkan dapat digunakan untuk memprediksi
+    profit
 
-2.  
+2.  Ketika sales 0, maka profit nya negatif atau rugi.
 
-3.  
+3.  Pertambahan sales 1 unit nilai profit bertambah 0,4229 dollar
 
 Buatlah plot untuk melihat sebaran data berdsarkan model persamaan
 regresi yang dihasilkan
 
 ```{r}
-
+plot(copiers$Sales, copiers$Profit)
+abline(model_ps, col = "red")
 ```
 
 Salah satu metric untuk mengevaluasi model dari **simple linear
@@ -242,12 +252,12 @@ regression**, dilihat **multiple r.squarednya** yang bisa diperoleh dari
 `summary(model)`
 
 ```{r}
-
+summary(model_ps)
 ```
 
-Multiple R-squared = - artinya Sales mampu menjelaskan - untuk variabel
-Profit, sisanya dijelaskan oleh variabel lain yang tidak dimasukkan ke
-dalam model
+Multiple R-squared = 0.88 artinya Sales mampu menjelaskan 88% untuk
+variabel Profit, sisanya dijelaskan oleh variabel lain yang tidak
+dimasukkan ke dalam model
 
 Multiple R-Squared = Metric yang melihat seberapa baik variabel
 prediktor menangkap variansi dari variabel target.
@@ -255,16 +265,11 @@ prediktor menangkap variansi dari variabel target.
 Adapun Multiple R2 adalah kuadrat dari nilai korelasi antara prediktor
 dan target
 
-```{r}
-
-```
-
 ## Interpretation
 
 -   Residuals = Error
--   Intercept = ... artinya, ketika salesnya 0, maka profit = ...
--   Coef. Sales = ... arinya, ketika sales naik 1, maka berkontribusi
-    sebanyak ... terhadap profit
+-   Ketika sales 0, maka profit nya negatif atau rugi.
+-   Pertambahan sales 1 unit nilai profit bertambah 0,4229 dollar
 
 ## Predicting new data
 
@@ -272,57 +277,74 @@ Prediksilah data Sales yang baru menggunakan model_ps. Misal saya
 memiliki Sales 2000, berapakah hasil prediksi Profit saya?
 
 ```{r}
-
+-114.0625 + 0.4229 * 2000
 ```
 
 Berapakah Profit ketika perusahaan ketika sales = 300?
 
 ```{r}
-
+-114.0625 + 0.4229 * 300
 ```
 
 Fungsi predict, untuk memprediksi variabel prediktor (Sales) secara
 otomatis
 
 ```{r}
-
+# predict(model_ps, newdata = )
 ```
 
 Memprediksi nilai-nilai Sales yang terdapat pada objek `transaksi`
 
 ```{r}
 transaksi <- data.frame(Sales = c(2000, 300, 1500, 4500))
-
+predict(model_ps, newdata = transaksi)
 ```
 
 Memprediksi nilai-nilai Sales pada data copiers, agar mendapatkan hasil
 **prediksi yang akan dibandingkan dengan nilai actual**
 
 ```{r}
-
+# predict(model_ps, newdata = copiers$Sales)
 ```
 
 ### **Dive Deeper**
 
-Membuat model_pd (model yang memprediksi profit berdasarkan variabel
-discount)
+1.  Membuat model_pd (model yang memprediksi profit berdasarkan variabel
+    discount)
 
 ```{r}
-
+model_pd <- lm(formula = Profit ~ Discount, data = copiers)
+model_pd
 ```
 
-Rangkuman dari model_pd
+2.  Rangkuman dari model_pd
 
 ```{r}
-
+summary(model_pd)
 ```
 
 Insight:
 
-Memprediksi data Discount dan membuat variabel baru di data copiers
+-   Persamaan regresi: `Profit = 698.3 - 1487.1 * Discount`
+
+-   Discount kurang baik digunakan sebagai predictor Profit
 
 ```{r}
-
+plot(copiers$Discount, copiers$Profit)
+abline(model_pd, col = "red")
 ```
 
-Berapakah nilai R-Squared yang terdapat dalam model? Interpretasikan!
+3.  Memprediksi Profit berdasarkan variable Discount
+
+```{r}
+discounts <- as.data.frame(copiers$Discount)
+colnames(discounts) <- c("Discount")
+head(predict(model_pd, newdata = discounts))
+```
+
+4.  Berapakah nilai R-Squared yang terdapat dalam model?
+    Interpretasikan!
+
+-   `R^2` dari model kita adalah 18%, artinya hanya 18% dari *dependent
+    variable* (Profit) yang dapat dijelaskan oleh *independent variable*
+    (Discount) nya.
