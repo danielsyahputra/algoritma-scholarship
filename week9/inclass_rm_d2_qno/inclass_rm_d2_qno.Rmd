@@ -1,0 +1,923 @@
+---
+title: "Inclass Material RM Qoppa Night Online"
+author: "Team Algoritma"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output: 
+  html_document:
+    theme: united
+    highlight: tango
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+# Import Library
+
+```{r, warning=F, message=F}
+library(dplyr)
+```
+
+**Knowledge Check**
+
+Dalam business case di lapangan, pemilihan variabel target biasanya
+dikaitkan dengan masalah bisnis yang ingin diselesaikan:
+
+Kasus 1:
+
+> Sebuah agen properti berusaha membangun sebuah model untuk menebak
+> harga sebuah properti untuk digunakan sebagai acuan kontrol untuk
+> menjaga harga pasar. Untuk itu, mereka mengembangkan sebuah model
+> dengan:
+
+-   Variabel target: Harga property
+-   Variabel prediktor: Faktor-fator yang memperngaruhinya (luas tanah,
+    lokasi, jumlah kamar, etc)
+
+Kasus 2:
+
+> Seorang pemilik restoran ingin menebak berapa banyak penjualan yang
+> akan dihasilkan di bulan depan oleh restorannya. Untuk itu mereka
+> mengembangkan sebuah model dengan kriteria:
+
+Variabel target: Sales next month Variabel prediktor: menu, jumlah hari
+kerja, libur, jumlah kunjungan ke restoran, lokasi, dll
+
+# Supervised vs Unsupervised Machine Learning
+
+1.  Supervised Learning: memiliki target variabel
+
+    -   Regression: target variabelnya numerik
+
+    -   Classification: target variabelnya kategorik
+
+2.  Unsupervised Learning: tidak memiliki target variabel
+
+    -   Clustering
+
+    -   Dimensionality Reduction
+
+# Exploratory Data Analysis
+
+Baca data `copiers`
+
+```{r}
+copiers <- read.csv("data_input/copiers.csv")
+```
+
+Copiers adalah online retailer yang fokus menjual alat tulis kantor
+(ATK).
+
+Mari lakukan investigasi data untuk melihat kolom/variable yang terdapat
+pada data tersebut.
+
+```{r}
+head(copiers)
+```
+
+```{r}
+str(copiers)
+```
+
+Pada kasus ini kita ingin memprediksi profit dari data copiers:
+
+-   Variabel Target: profit
+-   Variabel Prediktor: variabel2 yang mempengaruhi profit
+    (faktor-faktor yang mempengaruhi profit)
+
+Sebelum melakukan analisa lebih lanjut, eksplorasi data perlu dilakukan
+terlebih dahulu. Salah satu teknik eksplorasi data awal adalah
+menggunakan histogram atau boxplot.
+
+Misal kita ingin cek sebaran data profit copiers
+
+```{r}
+hist(copiers$Profit)
+```
+
+Kemudian, kita ingin cek sebaran data dari sales kita
+
+```{r}
+hist(copiers$Sales)
+```
+
+Dari dua histogram di atas, dapat kita simpulkan bahwa terdapat
+pencilan/outliers pada variabel sales dan profit
+
+Cek data-data oulier untuk variabel Profit
+
+```{r}
+boxplot(copiers$Profit, graph = F)$out
+
+```
+
+Cek data-data outlier untuk variabel Sales
+
+```{r}
+boxplot(copiers$Sales, graph = F)$out
+```
+
+Bagaimana hubungan antara variable Profit dan Sales? Gunakan plot untuk
+melihat sebaran dari kedua variable tersebut, apakah ada insight yang
+bisa diambil?
+
+```{r}
+plot(copiers$Profit, copiers$Sales)
+```
+
+Insight dari plot: - Korelasi/hubungan yang kuat antara sales dan
+profit. - Profit dipengaruhi sales. Semakin tinggi sales, semakin tinggi
+profit. - ketika kita memiliki dua variabel yang saling berhubungan
+erat, dapat dikatakan kedua variabel tersebut memiliki indikasi pasangan
+variabel target dan variabel prediktor yang baik. - Indikasi variabel
+prediktor dan target yang baik dapat dilihat dari nilai korelasi yang
+tinggi.
+
+```{r}
+cor(copiers$Profit, copiers$Sales)
+```
+
+# Modelling
+
+## Create Simple Linear Regression
+
+Simple linear regression = regresi dengan 1 variabel prediktor
+
+Formula dari simple linear regression:
+
+<center>
+
+$$\hat{y} = \beta_0 + \beta_1*x1$$
+
+</center>
+
+Keterangan :\
+$\hat{y}$ = target variabel yang ingin dipredisi\
+$\beta_0$ = intercept/constanta\
+$\beta_1$ = slope/gradient/coefficient/kemiringan\
+$x_1$ = variabel prediktor
+
+## \[Optional\] Ordinary Least Square
+
+Objective: Berusaha mencari nilai parameter b0 (intercept) dan b1
+(slope) untuk mendapatkan error/residual terkecil
+
+## Residual
+
+Residual atau error merupakan selisih dari nilai prediksi dengan nilai
+actual.
+
+-   Nilai prediksi:
+
+$$\hat{y} = \beta_0 + \beta_1*x $$
+
+-   residual:
+
+$$error = y - \hat{y}$$ Nilai error yang ingin diminimalkan dengan
+Ordinary Least Square adalah Sum of Squared Error (SSE). Disebut dengan
+Least Square karena ingin mendapatkan nilai kuadrat error (squared
+error) yang paling kecil/minimal.
+
+$$\sum^n_{i=1}(y_i - \hat{y}_i)^2$$
+
+Pertama-tama, mari kita cek untuk memprediksi Profit dengan dirinya
+sendiri (tanpa prediktor) `lm(formula = ..., data = ...)`
+
+```{r}
+lm(formula = Profit ~ 1, data = copiers)
+```
+
+Notes: target \~ prediktor, ketika kita tanpa menggunakan prediktor,
+maka digunakan target \~ 1 Bandingkan dengan mean profitnya
+
+```{r}
+mean(copiers$Profit)
+```
+
+Kesimpulan: ketika membuat model tanpa prediktor, model menghasilkan
+rata-rata dari variabel target.
+
+Dalam Simple Linear Regression, hanya digunakan **1 variabel
+prediktor**. `lm(formula = target~prediktor, data = ...)`
+
+Misal kita ingin memprediksi Profit (y) berdasarkan Salesnya (x)
+
+```{r}
+model_ps <- lm(formula = Profit ~ Sales, data = copiers)
+model_ps
+```
+
+Dari model di atas, didapat bahwa `intercept = -114.0625` dan koefisien
+`Sales = 0.4229`, sehingga model_ps menghasilkan formula
+
+<center>
+
+$$\hat{y} = \beta_0 + \beta_1*x1$$
+
+$$Profit =  -114.0625+ 0.4229*Sales$$
+
+</center>
+
+Dari formula di atas, apa kesimpulan yang bisa kita dapatkan?
+
+1.  Model regresi yang dihasilkan dapat digunakan untuk memprediksi
+    profit.
+2.  ketika salesnya 0 maka profitnya negatif atau rugi.
+3.  ketika sales bertambah satu satuan, maka profit bertambah 0.4229
+    dollar (sesuai dengan coefficient).
+
+Buatlah plot untuk melihat sebaran data berdasarkan model persamaan
+regresi yang dihasilkan
+
+```{r}
+plot(copiers$Sales, copiers$Profit)
+abline(model_ps, col = "red")
+```
+
+Salah satu metric untuk mengevaluasi model dari **simple linear
+regression**, dilihat **multiple r.squarednya** yang bisa diperoleh dari
+`summary(model)`
+
+```{r}
+summary(model_ps)
+```
+
+Multiple R-squared = 0.88 artinya Sales (variable prediktor) mampu
+menjelaskan 88% untuk variabel Profit (variabel target), sisanya
+dijelaskan oleh variabel lain yang tidak dimasukkan ke dalam model.
+
+```{r}
+1-0.8828
+```
+
+> Nilai p-value dari variable yang masuk ke dalam model biasanya
+> berhubungan dengan r-squared yang dihasilkan. Secara umum, jika
+> r-squared yang dihasilkan tinggi maka variabel prediktornya
+> signifikan.
+
+Multiple R-Squared = Metric yang melihat seberapa baik variabel
+prediktor menangkap variansi dari variabel target.
+
+Adapun Multiple R2 adalah kuadrat dari nilai korelasi antara prediktor
+dan target
+
+```{r}
+cor(copiers$Sales, copiers$Profit)
+cor(copiers$Sales, copiers$Profit)^2
+```
+
+## Interpretation
+
+-   Residuals = Error (nilai prediksi - nilai aktual)
+-   Intercept = -114 artinya, ketika salesnya 0, maka profit = -114
+    (rugi)
+-   Coef. Sales = 0.428 artinya, ketika sales naik 1, maka berkontribusi
+    sebanyak 0.428 terhadap profit
+
+**Key Points** - model umum regresi linear - dapat melakukan
+interpretasi terhadap multiple r-squared yang dihasilkan - interpretasi
+
+## Predicting new data
+
+Prediksilah data Sales yang baru menggunakan model_ps. Misal saya
+memiliki Sales 2000, berapakah hasil prediksi Profit saya?
+
+```{r}
+-114.0625 + 0.4229*2000
+```
+
+Berapakah Profit ketika sales = 300?
+
+```{r}
+-114.0625 + 0.4229*300
+```
+
+Fungsi predict, untuk memprediksi variabel prediktor (Sales) secara
+otomatis `predict(model, newdata)`
+
+Memprediksi nilai-nilai Sales yang terdapat pada objek `transaksi`
+
+```{r}
+transaksi <- data.frame(Sales = c(2000, 300, 1500, 4500, 270, 3000))
+```
+
+Memprediksi nilai-nilai Sales pada data copiers, agar mendapatkan hasil
+**prediksi yang akan dibandingkan dengan nilai actual**
+
+```{r}
+prediksi <- predict(model_ps, newdata = transaksi)
+prediksi
+```
+
+ketika salesnya 3000 maka berapa profit yang dihasilkan 1154.513
+
+-   R-squared
+
+**Notice**
+
+Hati-hati dalam menulis nama variable. Karena r bersifat case sensitive
+maka perlu diperhatikan dalam menulis huruf besar/kecil nama variable.
+Profit dan Discount menggunakan huruf kapital.
+
+### \*\*Dive Deeper\*
+
+1.  Buat model_pd (model yang memprediksi profit berdasarkan variabel
+    discount)
+
+```{r}
+model_pd <- lm(formula = Profit ~ Discount, data = copiers)
+model_pd
+```
+
+Rangkuman dari model_pd
+
+```{r}
+summary(model_pd)
+```
+
+2.  Insight:
+
+-   Variabel discount memiliki korelasi negatif dengan profit. Dengan
+    kata lain semakin besar discount yang diberikan maka profit yang
+    dihasilkan semakin kecil.
+
+-   Intercept: 698.25 artinya ketika discount = 0 (tidak ada discount)
+    maka profit yang dihasilkan sebesar 698.25
+
+-   coefficient -1487.10 artinya ketika discount naik 1 satuan maka
+    profit akan turun sebesar 1487.10
+
+3.  Prediksi Profit berdasarkan variabel Discount untuk semua data di
+    copiers.
+
+```{r}
+prediksi_d <- as.data.frame(predict(model_pd, newdata = copiers))
+colnames(prediksi_d) <- "prediksi"
+
+prediksi_d
+```
+
+4.  Berapakah nilai R-Squared yang terdapat dalam model?
+    Interpretasikan!
+
+Jawaban: Nilai R-Squared sebesar 0.1869 (kurang dari 20 persen) yang
+artinya tidak bisa membuat model dengan hanya data discount sebagai
+variabel prediktor
+
+Dengan menggunakan variabel discount hanya mampu menjelaskan 18% untuk
+variabel profit sementara sisanya dijelaskan oleh variabel lain yang
+tidak dimasukkan dalam model.
+
+Summary Day 1 Pembagian machine learning ada 2
+
+Supervised machine learning dan Unsupervised Machine Learning
+
+Supervised Machine Learning - Terdapat target variable Regression:
+Target variabel yang ingin diprediksi adalah variabel numerik
+classification: Target variabel yang ingin diprediksi adalah variabel
+kategorik
+
+Unsupervised Machine Learning - Tidak ada target variable
+
+Penggunaan unsupervised machine learning dapat digunakan pada kasus
+clustering, dimentionality reduction
+
+Regression Analysis:
+
+Terdapat 2 jenis variabel yang perlu diperhatikan 1. Variabel
+Target/dependent variable: Variabel yang ingin diprediksi, variabel yang
+difokuskan oleh user 2. Variabel prediktor: variabel tambahan untuk
+memprediksi variabel target
+
+R-Squared - Untuk melihat ukuran kebaikan model. - Nilai r-squared
+disesuaikan dengan kasus bisnis yang ditemui. - Nilai r-squared
+direpresentasikan dalam bentuk %.
+
+Formula untuk membuat regression model lm(formula = variabel target \~
+variabel prediktor, data )
+
+Kita dapat menggunakan fungsi `predict` untuk melakukan prediksi/untuk
+melihat nilai numerik yang belum ada di data.
+
+--- End Day 1 ---
+
+## Leverage vs Influence
+
+Leverage adalah nilai yang jauh dari kerumunan datanya, sering disebut
+sebagai **outlier**. Nilai leverage dapat mempengaruhi model linier
+regresi atau pun tidak.
+
+Nilai leverage bisa mempengaruhi model secara signifikan atau pun
+tidak.\
+\* Ketika leverage mempengaruhi model secara signifikan : high influence
+\* Ketika leverage tidak mempengaruhi model secara signifikan : low
+influence
+
+Nilai leverage ketika berpengaruh baik dalam artian meningkatkan nilai
+R-squared atau Adjusted R-square maka sebaiknya outlier tersebut kita
+pakai dalam pemodelan. Ketika nilai leverage berpangaruh buruk dalam
+artian menurun nilai R-squared atau Adjusted R-squared maka sebaiknya
+leverage tersebut kita buang.
+
+Untuk melakukan pengecekan leverage :
+
+-   `hist()`
+-   `boxplot()`
+
+Buatlah model regresi dengan menghilangkan nilai outlier pada variabel
+Sales.
+
+-   Melakukan pengecekan outlier pada variabel Sales
+
+```{r}
+#Boxplot sales
+hist(copiers$Sales)
+```
+
+-   Subset data copiers tanpa melibatkan nilai outlier pada variabel
+    Sales
+
+```{r}
+boxplot(copiers$Sales)$out
+```
+
+Buat model linier regression tanpa outlier
+
+```{r}
+copiers_no <- copiers[copiers$Sales < 4000, ]
+model_ps_no <- lm(formula = Profit ~ Sales, data = copiers_no)
+model_ps_no
+```
+
+```{r}
+summary(model_ps_no)
+```
+
+```{r}
+# With and Without outlier
+plot(copiers_no$Sales, copiers_no$Profit)
+abline(model_ps_no, col = "red")
+abline(model_ps, col = "blue")
+```
+
+Formula model outlier:
+
+Bandingkan garis regresi yang dibentuk dari model_ols dan model_no,
+apakah data outlier tersebut akan menghasilkan output yang jauh berbeda?
+
+```{r}
+
+```
+
+**Kesimpulan:** Model Profit dengan outlier dan tanpa outlier memiliki
+kondisi **high leverage low influece** karena nilai slope pada model dg
+outlier dan tanpa outlier tidak berbeda jauh, begitu juga garis
+regresinya.
+
+cek coefficient
+
+```{r}
+model_ps_no$coefficients
+```
+
+Selain melihat berdasarka visualisasi dan perbedaan nilai slope, kita
+bisa mengetahui apakah leverage yang kita miliki low/high influence
+dengan melihat niali r-squared
+
+```{r}
+```
+
+-   Bagaimana menentukan model yang memiliki outlier vs tidak?
+
+-   Apabilla nilai R\^2 pada model yang memiliki outlier lebih baik
+    tanpa outlier maka pilih model yang menggunakan outlier.
+
+## \[Optional\] Beta Coefficient formula
+
+$$\beta = Cor(x,y)\frac{Sd(y)}{Sd(x)}$$
+
+di mana :\
+$\beta$ = beta coefficient $\beta_1, \beta_2, ..., \beta_n$\
+$Cor(x,y)$ = Korelasi antara x dan y\
+$Sd(y)$ = Standar Deviasi y\
+$Sd(x)$ = Standar Deviasi x
+
+Note: Beta coefficietnt dan korelasi sejalan, ketika beta coefficient
+bernilai positif maka korelasinya juga positif, sedangkan ketika beta
+coefficient bernilai negatif, maka korelasinya juga negatif.
+
+# Multiple linear regression
+
+adalah regressi linear dengan *lebih dari satu prediktor*
+`lm(formula = target ~ Prediktor1 + prediktor 2 +... , data = ...)`
+
+## Rumus Multiple Linear Regression
+
+<center>
+
+$$\hat{y} = \beta_0 + \beta_1*x_1 + \beta_2*x_2 + ... + \beta_n*x_n$$
+
+</center>
+
+Untuk mengevaluasi model dari multiple linear regression, digunakan
+adjusted r.squared.
+
+**Business Problem**
+
+Menggunakan data `crime` yang kita miliki, buatlah model regresi untuk
+memprediksi `inequality` dengan menggunakan seluruh prediktor yang ada.
+
+-   read data
+
+```{r}
+library(dplyr)
+crime <- read.csv("data_input/crime.csv", stringsAsFactors = F) %>% 
+  dplyr::select(-X) # take out kolom X
+head(crime)
+```
+
+```{r}
+names(crime) <- c("percent_m", "is_south", "mean_education", "police_exp60", 
+                  "police_exp59", "labour_participation", "m_per1000f", 
+                  "state_pop", "nonwhites_per1000", "unemploy_m24", "unemploy_m39", 
+                  "gdp", "inequality", "prob_prison", "time_prison", "crime_rate")
+head(crime)
+```
+
+Glossary data `crime` :
+
+-   `percent_m`: percentage of males aged 14-24
+
+-   `is_south`: whether it is in a Southern state. 1 for Yes, 0 for No.\
+
+-   `mean_education`: mean years of schooling\
+
+-   `police_exp60`: police expenditure in 1960\
+
+-   `police_exp59`: police expenditure in 1959
+
+-   `labour_participation`: labour force participation rate\
+
+-   `m_per1000f`: number of males per 1000 females\
+
+-   `state_pop`: state population\
+
+-   `nonwhites_per1000`: number of non-whites resident per 1000 people\
+
+-   `unemploy_m24`: unemployment rate of urban males aged 14-24\
+
+-   `unemploy_m39`: unemployment rate of urban males aged 35-39\
+
+-   `gdp`: gross domestic product per head\
+
+-   `inequality`: income inequality\
+
+-   `prob_prison`: probability of imprisonment\
+
+-   `time_prison`: avg time served in prisons\
+
+-   `crime_rate`: crime rate in an unspecified category
+
+-   cek struktur data
+
+```{r}
+str(crime)
+```
+
+ubah kolom is_south menjadi factor
+
+```{r}
+crime$is_south <- as.factor(crime$is_south)
+str(crime)
+```
+
+-   Tentukan variabel prediktor dan variabel target apabila kita ingin
+    membuat model yang memprediksi `inequality` berdasarkan `gdp`
+
+-   variabel target: inequality
+
+-   variabel prediktor: gdp
+
+-   Membuat model dengan 1 prediktor (gdp)
+
+```{r}
+model_ineq <- lm(formula = inequality ~ gdp, data = crime)
+summary(model_ineq)
+model_ineq$coefficients
+```
+
+Insight
+
+-   Persamaan regresi: `Inequality = 386.03 - 0.36551 * gdp`
+
+-   `R^2 = 78%`
+
+**💡 Interpretasi `summary()` model**
+
+-   **Nilai p-value** sebagai tolak ukur apakah variabel prediktor
+    berpengaruh signifikan terhadap variabel target. Dikatakan
+    signifikan ketika nilai p-value \< 0.05.
+
+> Hipotesis : - H0 : Prediktor variabel tidak mempengaruhi target
+> variabel - H1 : Prediktor variabel signifikan berpengaruh terhadap
+> target variabel
+
+-   Membuat model dengan seluruh prediktor
+
+```{r}
+model_ineq_all <- lm(formula = inequality ~ ., data = crime)
+model_ineq_all
+```
+
+```{r}
+summary(model_ineq_all)
+
+```
+
+-   Intrepretasi
+
+Variabel yang berpengaruh terhadap inequality adalah:
+
+-   gdp
+
+-   crime_rate
+
+-   mean_education
+
+```{r fig.width=12}
+library(GGally)
+ggcorr(crime, label = T, label_size = 2.5, cex = 2.6)
+```
+
+## R-Squared vs Adjusted R-Squared
+
+Ketika kita menggunakan lebih dari satu prediktor, R-Square akan selalu
+bertambah seiring dengan bertambahnya variabel prediktor baru meskipun
+belum tentu memiliki pengaruh terhadap model. Untuk mengatasi hal ini,
+dibuat metrik baru bernama `Adjusted R-Square` yang menghitung nilai
+R-Square tetapi juga mempertimbangkan jumlah variabel yang digunakan
+sehingga nilai R-Square yang ditampilkan lebih tepat.
+
+$$
+Adjusted\ R^2 = 1 - \frac{(1-R^2)(n-1)}{n-k-1}
+$$
+
+Keterangan:
+
+-   n: Jumlah data
+-   k: Jumlah variabel prediktor
+-   $R^2$: Nilai $R^2$
+
+Bandingkan beberapa r-squared
+
+```{r}
+
+```
+
+> Note: Nilai r-squared ketika ditambahkan prediktor semakin banyak, mau
+> prediktor tersebut signifikan/tidak signifikan, nilainya akan selalu
+> bertambah secara signifikan. Namun, nilai adj r-squared ketika
+> ditambahkan prediktor tapi jika prediktornya tidak signifikan, maka
+> nilainya tidak akan naik secara signifikan.
+
+Secara tidak langsung, model yang kita buat sudah menyimpan sebuah nilai
+prediksi yang tersimpan dalam `model$fitted.values`
+
+```{r}
+prediksi <- model_ineq_all$fitted.values
+crime$prediksi <- prediksi
+head(crime)
+```
+
+# 💣 Model Evaluation
+
+Tujuan dari suatu pemodelan prediktif adalah melakukan prediksi untuk
+data yang belum dimiliki. Setelah melakukan prediksi dari data, kita
+harus mengetahui apakah model machine learning yang sudah dibuat dapat
+menghasilkan prediksi dengan error yang paling kecil. Untuk melakukan
+model evaluation pada regression model ada beberapa cara :
+
+-   menggunakan nilai R-Squared dan Adj R-Squared
+
+    -   untuk menentukan seberapa baik model dalam menjelaskan variansi
+        dari target variabel
+
+-   menggunakan nilai error
+
+    -   untuk melihat apakah prediksi yang dibuat menghasilkan nilai
+        error terkecil
+
+Beberapa nilai error yang ada :
+
+-   Sum of Squared Error (SSE)
+-   Mean Squared Error (MSE)
+-   Root Mean Squared Error (RMSE)
+-   Mean Absolute Error (MAE)
+-   Mean Absolute Percentage Error (MAPE)
+
+## Error/Residual
+
+Error/residual adalah selisih antara hasil prediksi dengan nilai aktual.
+
+$$
+Error/residual = prediction - actual = \hat y - y
+$$
+
+## Mean Absolute Error
+
+Mean Absolute Error (MAE) menunjukkan rata-rata dari nilai absolut
+error. MAE bisa diinterpretasikan sebagai seberapa besar penyimpangan
+hasil prediksi terhadap nilai aktualnya.
+
+$$
+MAE = \frac{\sum |\hat y - y|}{n}
+$$
+
+```{r}
+# Menghitung error secara manual
+model_ineq_all$fitted.values - crime$inequality
+
+```
+
+```{r}
+sum(abs(model_ineq_all$fitted.values - crime$inequality))/nrow(crime)
+
+```
+
+MAE 9.9 menunjukkan bahwa model kita secara rata-rata hasil prediksinya
+akan menyimpang sebesar nilai MAE tersebut (9.9) (baik positif maupun
+negatif).
+
+> Notes: untuk menentukan apakah nilai MAE yang kita miliki besar/kecil,
+> kita bisa bandingkan dengan range data asli kita
+
+Kelebihan:
+
+-   mudah diinterpretasi
+
+Kekurangan:
+
+-   harus cek range data untuk menentukan tingkat toleransi error
+
+## Mean Absolute Percentage Error (MAPE)
+
+MAPE menunjukkan seberapa besar penyimpangannya dalam bentuk persentase.
+
+$$
+MAPE = \frac{1}{n} \sum\frac{|\hat y - y|}{y} 
+$$
+
+```{r warning=FALSE}
+# install.packages("MLmetrics")
+library(MLmetrics)
+
+MAPE(y_pred = model_ineq_all$fitted.values, y_true = crime$inequality) * 100
+```
+
+> MAPE range nya dalam persen, semakin kecil nilai MAPE, semakin bagus
+> model yang kita miliki.
+
+MAPE artinya model kita secara rata-rata menyimpang sebesar nilai MAPE
+dari nilai aktualnya. MAE dan MAPE adalah metrik yang baik untuk
+interpretasi karena mudah dipahami.
+
+Kelebihan: - Mudah diinterpretasi
+
+Kekurangan: - Tidak bisa digunakan ketika *data actual ada yang bernilai
+0*
+
+## Mean Squared Error (MSE)
+
+MSE menghitung berapa selisih kuadrat dari hasil prediksinya kemudian
+dirata-rata. MSE sensitif terhadap perubahan atau selisih hasil prediksi
+yang besar sehingga meskipun sulit diinterpretasikan tetapi menjadi
+lebih baik dalam mendeteksi selisih yang besar.
+
+$$
+MSE = \frac{1}{n} \sum (\hat y - y)^2
+$$
+
+```{r}
+MSE(y_pred = model_ineq_all$fitted.values, y_true = crime$inequality)
+```
+
+## Root Mean Squared Error (RMSE)
+
+RMSE adalah bentuk akar kuadrat dari MSE. Karena sudah diakarkan, maka
+interpretasinya kurang lebih sama dengan MAE. RMSE dapat digunakan jika
+kita lebih concern dengan error yang sangat besar.
+
+$$
+RMSE = \sqrt{\frac{1}{n} \sum (\hat y - y)^2}
+$$
+
+```{r}
+RMSE(y_pred = model_ineq_all$fitted.values, y_true = crime$inequality)
+```
+
+Perbedaan MAE dengan RMSE, RMSE sensitive terhadap error yang cukup
+besar/kecil.
+
+```{r echo=FALSE, fig.width=12}
+knitr::include_graphics("assets/mae-vs-rmse.png")
+```
+
+## Dive Deeper
+
+**Business Problem**
+
+Sebagai seorang penjual properti, kita ingin membuat model yang mana
+dapat memprediksi harga properti berdasarkan beberapa informasi yang ada
+pada data.
+
+Tentukan variabel:
+
+-   target: price
+
+-   prediktor: semua variabel kecuali price
+
+-   Import data `house_data.csv`
+
+```{r}
+house <- read.csv("data_input/house_data.csv")
+```
+
+-   cek struktur data
+
+```{r}
+str(house)
+```
+
+-   cek hubungan variable target dan prediktor
+
+```{r, fig.width=12}
+library(GGally)
+ggcorr(house, label = T)
+
+```
+
+Insight:
+
+-   Tidak ada fitur yang berkorelasi negatif
+
+-   Nilai korelasi tertinggi adalah 0.8 yaitu korelasi
+    `sqft_living ~ bathrooms` , `sqft_living ~ grade`
+
+    buat model dengan keseluruhan variable
+
+```{r}
+model_house <- lm(formula = price ~ ., data = house)
+```
+
+-   Intrepretasi model
+
+```{r}
+summary(model_house)
+```
+
+-   variabel prediktor yang signifikan?
+
+    Setiap predictor merupakan predictor yang signifikan karena memiliki
+    level signifikan `***`
+
+```{=html}
+<!-- -->
+```
+-   goodness of fit (adj r-quared): `64%`
+
+```{r}
+summary(model_house)$adj.r.squared * 100
+```
+
+Lakukan model evaluasi berdasarkan hasil prediksi model menggunakan
+nilai RMSE. Cek range datanya!
+
+```{r}
+RMSE(y_pred = model_house$fitted.values, y_true = house$price)
+```
+
+Gunakan histogram untuk melihat sebaran data
+
+```{r}
+hist(house$price)
+```
+
+Bagaimana kesimpulan yang diperoleh?
+
+Nilai `price` pada data `house` ada pada skala jutaan (10\^6) dan nilai
+`RMSE = 218864.1` masih pada skala ribuan. Jadi menurut saya modelnya
+bisa dikatakan tidak terlalu buruk.
+
+```{r}
+MAE(y_pred = model_house$fitted.values, y_true = house$price)
+```
