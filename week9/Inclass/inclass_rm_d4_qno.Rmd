@@ -1675,6 +1675,9 @@ menggunakan model reguler ini untuk seterusnya.
 4.  Lakukanlah uji asumsi untuk model yang dibuat (pilih salah satu
     model yang memiliki performance yang baik)
 
+```{=html}
+<!-- -->
+```
 a.  Linearity
 
 Uji asumsi untuk linearity dengan `cor.test()`
