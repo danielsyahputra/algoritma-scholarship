@@ -989,7 +989,7 @@ Kembali lagi pada hasil summary `model_ineq_all`, perhatikan, variabel
 prediktor mana saja yang tidak signifikan?
 
 ```{r}
-
+summary(model_ineq_all)
 ```
 
 variabel yang signifikan terhadap `inequality`:
@@ -1007,21 +1007,18 @@ Untuk melakukan evaluasi prediktor yang tidak signifikan:
 
 Bagaimana jika terdapat variabel prediktor yang tidak signifikan?
 
-> Hapus variable dengan p-value terbesar
+> dihapus dari pembuatan model, dimulai dari p-value yang paling besar
+> secara satu per satu.
+
+Hapus variable dengan p-value terbesar
 
 ```{r}
-summary(model_ineq_all)
-```
-
-```{r}
-library(dplyr)
-crime2 <- crime %>% 
+crime2 <- crime %>%
   select(-police_exp59, -nonwhites_per1000, -prediksi)
-```
 
-```{r}
-model_crime_2 <- lm(formula = inequality ~ ., data = crime2)
-summary(model_crime_2)
+model_crime2 <- lm(formula = inequality ~ . , data = crime2)
+
+summary(model_crime2)
 ```
 
 # Feature Selection (Step-wise Regression) {.tabset}
@@ -1044,18 +1041,26 @@ hilang pada model.
     dengan cara menambahkan atau mengurangi variabel prediktor sehingga
     diperoleh model dengan AIC terkecil.
 
+# Cek kebersihan data
+
 ```{r}
 crime <- crime %>% 
   select(-prediksi)
 
+head(crime)
+```
+
+# cek missing value
+
+```{r}
 colSums(is.na(crime))
 ```
 
 ```{r}
 # model tanpa prediktor
-model_ineq_non <- lm(formula = inequality ~ 1, data = crime)
+model_ineq_non <- lm(formula = inequality ~ 1, crime)
 # model dengan semua prediktor
-model_ineq_all <- lm(formula = inequality ~ ., data = crime)
+model_ineq_all <- lm(formula = inequality ~ . , data = crime)
 ```
 
 ## Backward
@@ -1072,7 +1077,7 @@ terkecil.
 
 ```{r}
 #model backward
-model_backward <- step(object = model_ineq_all, direction="backward")
+model_backward <- step(object = model_ineq_all, direction = "backward", trace = 0)
 ```
 
 Summary model
@@ -1095,12 +1100,13 @@ terkecil.
 1.  Tidak menggunakan variabel apapun
 2.  Memilih variabel yang ketika ditambahkan menghasilkan AIC terbaik
 3.  Menambahkan variabel yang dipilih dari tahap kedua
-4.  Mengulangi step 2 dan 3 hingga nilai AIC terbaol dihasilkan ketika
+4.  Mengulangi step 2 dan 3 hingga nilai AIC terbaik dihasilkan ketika
     tidak menambahkan variabel
 
 ```{r}
 #model forward
 model_forward <- step(object = model_ineq_non, direction = "forward", scope = list(lower = model_ineq_non, upper = model_ineq_all))
+
 ```
 
 Summary Model
@@ -1133,7 +1139,7 @@ Gabungan backward dan forward
 
 ```{r}
 #model both
-model_both <- step(object = model_ineq_non, scope = list(upper=model_ineq_all), data=crime2, direction="both")
+model_both <- step(object = model_ineq_non, direction = "both", scope = list(lower = model_ineq_non, upper = model_ineq_all))
 ```
 
 Summary model
@@ -1150,12 +1156,12 @@ summary(model_both)
 Perbandingan nilai adjusted r-squared pada ketiga model yang sudah
 dibuat
 
+Perbandingan RMSE
+
 ```{r}
-# Prediksi backward
 prediksi_backward <- predict(model_backward, newdata = crime)
 prediksi_forward <- predict(model_forward, newdata = crime)
-prediksi_both<- predict(model_both, newdata = crime)
-
+prediksi_both <- predict(model_both, newdata = crime)
 ```
 
 ```{r}
@@ -1166,39 +1172,40 @@ RMSE(y_pred = prediksi_both, y_true = crime$inequality)
 
 ```{r}
 library(performance)
-# install.packages("performance")
-
+#install.packages("performance")
 compare_performance(model_backward, model_forward, model_both)
 ```
 
-Model terbaik berdasarkan adjusted r-squared terbesar adalah
-`model_backward`
+Model terbaik berdasarkan adjusted r-squared terbesar, AIC terkecil dan
+RMSE terkecil adalah `model_backward`
+
+Melakukan prediksi data crime berdasarkan model terbaik (model_backward)
 
 ```{r}
+hasil_prediksi <- predict(object = model_backward, newdata = crime)
 
+crime$hasil_prediksi <- hasil_prediksi
+
+head(crime)
 ```
 
 **Hal yang bisa dilakukan untuk improve model:**
 
-1.  Handle outliers, tentukan apakah dia memiliki high influence atau
-    tidak
-
-2.  Melakukan feature selection dengan step-wise regression
-
-3.  Menggunakan variabel prediktor yang signifikan
+1.  Menggunakan variabel prediktor yang signifikan
+2.  Menambahkan data
+3.  menggunakan model lain (random forest, decision tree, dll)
 
 Prediksi data crime berdasarkan model backward
 
 ```{r}
-hasil <- predict(object = model_backward, newdata = crime)
-crime$hasil <- hasil
 head(crime)
 ```
 
 cek 5 data teratas
 
 ```{r}
-
+head(crime, 5)
+crime$hasil_prediksi[1:5]
 ```
 
 # Confidence Interval
@@ -1206,31 +1213,32 @@ cek 5 data teratas
 Dalam melakukan prediksi, biasanya kita tidak selalu melihat nilai fix
 prediksinya, namun terkadang membutuhkan nilai range tebakannya. Nilai
 range dari suatu tebakan bisa kita sebut sebagai *confidence interval*.
-
-Confidence level yang biasa diguanakan = 90%, 95%, 99%
-
-Mencari hasil prediksi dengan confidence interval 95%
+Confidence level yang biasa diguanakan = 90%, 95%, 99% Mencari hasil
+prediksi dengan confidence interval 95%
 
 ```{r}
 # cek confidence interval 95%
-head(predict(object = model_backward, newdata = crime, interval = "prediction", level = 0.95))
+predict(object = model_backward, newdata = crime, interval = "prediction", level = 0.95)[1:5,]
+
+head(crime)
 ```
 
 ```{r}
 # cek confidence interval 100%
-head(predict(object = model_backward, newdata = crime, interval = "prediction", level = 1))
+predict(object = model_backward, newdata = crime, interval = 
+          "prediction", level = 1)[1:5,]
 ```
 
 ```{r}
 # cek confidence interval 0%
-head(predict(object = model_backward, newdata = crime, interval = "prediction", level = 0))
+predict(object = model_backward, newdata = crime, interval = 
+          "prediction", level = 0)[1:5,]
 ```
 
-> Kesimpulan
-
-```{r}
-
-```
+> Kesimpulan: semakin tinggi confidence interval (tingkat kepercayaan)
+> kita dalam memprediksi semakin lebar/besar pula range tebakan yang
+> dihasilkan. Begitu pula semakin rendah confidence intervalnya maka
+> akan semakin sempit/kecil range tebakan yang dihasilkan.
 
 Tujuan dari melihat convidence interval : mengetahui range dari hasil
 prediksi agar ketika ingin menggeser hasil tebakan/prediksi kita tahu
@@ -1246,24 +1254,11 @@ ggplot(crime, aes(x = gdp, y = inequality))+
   theme_minimal()
 ```
 
-Evaluasi model_ineq_all, model_ineq2, model_ineq dan model hasil
-stepwise
+#Dari Pak Daniel;
 
-```{r}
-
-```
-
-cek RMSE
-
-```{r}
-
-```
-
-Model mana yang dipilih?
-
-```{r}
-
-```
+Misal CI nya 95%, brarti kita hanya memberikan 5% toleransi error. Jadi
+kalau CI nya 0%, brarti kita hanya mentolelir 0% error, jadinya rentang
+nya juga 0
 
 # Limitasi dan Asumsi linear regression {.tabset}
 
@@ -1307,7 +1302,8 @@ $$
 
 ```{r fig.width=8}
 crime <- crime %>% 
-  select(-hasil)
+  dplyr::select(-hasil_prediksi)
+
 ggcorr(crime, label = T, label_size = 3, hjust = 1)
 ```
 
@@ -1316,6 +1312,8 @@ ggcorr(crime, label = T, label_size = 3, hjust = 1)
 ```{r}
 #gunakan cor.test 
 cor.test(crime$gdp, crime$inequality)
+cor.test(crime$mean_education, crime$inequality)
+cor.test(crime$time_prison, crime$inequality)
 ```
 
 Cara handling untuk case asumsi linearity, ketika ada variable prediktor
@@ -1339,6 +1337,10 @@ hist(model_backward$residuals)
 2.  Uji statistik menggunakan `shapiro.test()`. (harapannya pvalue >
     alpha agar keputusan yang diambil adalah gagal tolak H0)
 
+H0: error berdistribusi normal H1: error tidak berdistribusi normal
+
+harapannya p-value \> 0.05
+
 Shapiro-Wilk hypothesis test:
 
 ```{r}
@@ -1358,6 +1360,8 @@ transformasi data pada target variabel** atau **menambahkan sample
 data**.
 
 Cara untuk transformasi data:
+
+Fokus dari transformasi data adalah pada variabel targetnya
 
 1.  min-max transformation
 
@@ -1381,8 +1385,46 @@ sqrt(crime$inequality)
 4.  z-score standarization
 
 ```{r}
-scale(crime$inequality)
+scale(crime$inequality)[1:5]
 ```
+
+Transformasi data
+
+Pros: Dapat mengecek variabel prediktor dalam model sudah signifikan
+secara valid terhadap variabel target dan menghasilkan prediksi yang
+tidak bias.
+
+Cons: karena tranformasi sifatnya merubah data dari data asli, maka
+koefisien regresi yang didapatkan tidak bisa diinterpretasi secara
+langsung.
+
+Summary Day 3
+
+Stepwise Regression/Feature Selection
+
+-   Dapat menghasilkan model terbaik berdasarkan nilai AIC yang
+    diperoleh dengan algoritma:
+-   Backward -> model dengan seluruh variabel prediktor -> eliminasi
+-   Forward -> model tanpa variabel prediktor -> penambahan
+-   Both -> teknik gabungan antara backward dan forward
+
+Stepwise Regression: Greedy Algorithm - Model terbaik dicari secara
+cepat namun tidak optimal - Harus dikombinasikan dengan subject matter
+expertise
+
+Confidence Interval dari model regresi - Pembuktiannya dapat dilakukan
+menggunakan visualisasi - Semakin tinggi confidence interval yang
+digunakan maka semakin lebar rentang prediksi yang dihasilkan (dilihat
+dari upper, lower)
+
+Uji Asumsi
+
+-Linearitas -Normalitas - Shapiro.test - Visualisasi dengan histogram,
+ketika errornya berada di sekitar 0 maka model tersebut mengikuti
+sebaran normal -> bentuk visualisasi menyerupai lonceng -
+Homoskedastisitas - Multikolinearity
+
+--- End Day 3 ---
 
 ## Homoscedasticity of Residual
 
@@ -1390,7 +1432,7 @@ Homocesdasticity menunjukkan bahwa residual atau error bersifat konstan
 atau tidak membentuk pola tertentu. Jika error membentuk pola tertentu
 seperti garis linear atau mengerucut, maka kita sebut dengan
 `Heterocesdasticity` dan akan berpengaruh pada nilai standard error pada
-estimate/koefisien prediktor yan bias (terlalu sempit atau terlalu
+estimate/koefisien prediktor yang bias (terlalu sempit atau terlalu
 lebar).
 
 Homocesdasticity bisa dicek secara visual dengan melihat apakah ada pola
@@ -1412,7 +1454,8 @@ Untuk menguji asumsi ini dapat dilakukan:
 
 ```{r}
 # plot model.fitted dengan residuals
-
+plot(x = model_backward$fitted.values, y = model_backward$residuals)
+abline(h = 0, col="red", lty = 2)
 ```
 
 2.  Uji statistika dengan Breusch-Pagan dari package `lmtest`
@@ -1427,8 +1470,8 @@ $$
 
 ```{r}
 # install.packages("lmtest")
-#library(lmtest)
-
+library(lmtest)
+bptest(model_backward)
 ```
 
 Kesimpulan: Karena p-value \> alpha, artinya variansi error menyebar
@@ -1441,7 +1484,10 @@ z-score = x - mean(x)/sd(x)
 
 ```{r}
 #keluarkan variabel target dan variabel kategorik
+prediktor <- crime %>% 
+  select(-inequality, -is_south)
 
+scale(prediktor)[1:5, ]
 ```
 
 ## No Multicolinearity
@@ -1457,8 +1503,8 @@ Harapannya mendapatkan VIF \< 10
 
 ```{r}
 # install.packages("car")
-# library(car)
-
+library(car)
+vif(model_backward)
 ```
 
 > Apabila memiliki model yang terindikasi multiko dimana terdapat
@@ -1493,17 +1539,271 @@ biner (1/0).
 diubah menjadi (0/1) sebanyak n-1 variabel baru
 
 ```{r}
-
+unique(copiers$Ship.Mode)
 ```
 
 buat model lm profit berdasarkan sales dan ship.mode
 
 ```{r}
-
+model_dummy <- lm(formula = Profit ~ Sales + Ship.Mode, data = copiers)
+summary(model_dummy)
 ```
 
 cek performa model
 
 ```{r}
-
+prediksi_dummy <- predict(object = model_dummy, newdata = copiers)
+RMSE(y_pred = prediksi_dummy, y_true = copiers$Profit)
 ```
+
+# Dive Deeper
+
+**Study Case**
+
+Sebagai seorang karyawan pada perusahaan asuransi, Anda diminta untuk
+melakukan prediksi premi asuransi yang harus dibayarkan oleh seorang
+pelanggan yang akan melakukan pemilihan asuransi.
+
+1.  Silahkan import terlebih dahulu data `train_insurance.csv`
+
+```{r}
+train_ins <- read.csv("data_input/train_insurance.csv")
+train_ins
+```
+
+Deskripsi variabel:
+
+-   `age`: usia/umur
+-   `sex`: gender (male or female)\
+-   `bmi`: body mass index\
+-   `children`: jumlah anak\
+-   `smoker`: perokok/bukan
+-   `region`: wilayah tempat tinggal\
+-   `charges`: cost medical (dolar)
+
+2.  Lakukanlah Exploratory Data Analysis sebelum membuat pemodelan
+
+3.  Periksalah struktur data `train_ins`
+
+```{r}
+str(train_ins)
+```
+
+b.  Ubahlah tipe data yang belum sesuai
+
+Data yang belum sesuai:
+
+-   Sex -> factor
+
+-   Smoker -> factor
+
+-   Region -> factor
+
+```{r}
+train_ins <- train_ins %>% 
+  mutate(sex = as.factor(sex),
+         smoker = as.factor(smoker),
+         region = as.factor(region))
+```
+
+c.  Periksalah apakah terdapat missing value pada dataset
+
+```{r}
+colSums(is.na(train_ins))
+```
+
+d.  Sebelum melakukan analisis regresi, periksalah korelasi antara
+    variabel **target** yaitu `charges` dan \*\*prediktor\*
+
+```{r}
+library(GGally)
+ggcorr(train_ins, label = T, label_size = 3, hjust = 1)
+```
+
+Berdasarkan output korelasi diatas, variabel prediktor apakah yang
+memiliki korelasi terkecil?
+
+> Fitur `children` memiliki korelasi yang paling rendah dengan variabel
+> target kita.
+
+Asumsi awal apa yang bisa Anda berikan terkait korelasi tersebut?
+
+> Dari nilai-nilai korelasi diatas, bisa dilihat kalau korelasi antar
+> variabel predictor itu tidak memiliki korelasi yang kuat. Sehingga,
+> saya bisa berasumsi kalau data tersebut telah lulus uji
+> `multicolinearity`.
+
+3.  Buatlah sebuah model
+
+<!-- -->
+
+a.  Membuat model dengan semua prediktor
+
+```{r}
+model_insurance <- lm(formula = charges ~ ., data = train_ins)
+```
+
+b.  Menggunakan stepwise regression dengan direction backward untuk
+    mengetahui variabel apa saja yang signifikan berpengaruh terhadap
+    `charges`
+
+```{r}
+model_insurance_backward <- step(object = model_insurance, direction = "backward")
+```
+
+Berdasarkan kedua model diperoleh, apabila dilihat dari nilai adjusted
+R-Squared-nya, manakah model yang lebih baik?
+
+```{r}
+print(summary(model_insurance)$adj.r.squared)
+print(summary(model_insurance_backward)$adj.r.squared)
+```
+
+Model insurance tanpa stepwise regression memiliki `r-squared` yang
+lebih baik. Namun, kita perlu juga melihat juga dari nilai-nilai yan
+lain seperti RMSE, AIC, dll.
+
+```{r}
+# Compare performance
+compare_performance(model_insurance, model_insurance_backward)
+```
+
+Dari hasil performance diatas ternyata nilai AIC, R-Squared, dan RMSE
+model reguler (tanpa stepwise ) yang lebih baik. Jadi kita akan
+menggunakan model reguler ini untuk seterusnya.
+
+4.  Lakukanlah uji asumsi untuk model yang dibuat (pilih salah satu
+    model yang memiliki performance yang baik)
+
+a.  Linearity
+
+Uji asumsi untuk linearity dengan `cor.test()`
+
+H0 : Tidak Linear
+
+H1 : Linear
+
+```{r}
+# str(train_ins)
+# summary(model_insurance)
+cor.test(train_ins$charges, train_ins$age)
+cor.test(train_ins$charges, train_ins$bmi)
+cor.test(train_ins$charges, train_ins$children)
+```
+
+b.  Normality of Residual
+
+Uji Statistik dengan `shapiro.test()`
+
+H0: residual berdistribusi normal
+
+H1: residual tidak berdistribusi normal
+
+```{r}
+shapiro.test(model_insurance$residuals)
+```
+
+c.  Homoscedasticity
+
+H0: model homoscedasticity
+
+H1: model heteroscedasticity
+
+```{r}
+bptest(model_insurance)
+```
+
+d.  No Multicollinearity
+
+-   Uji No Multicollinearity dengan `vif()`. Periksalah apakah terdapat
+    variabel yang memiliki nilai VIF > 10
+
+```{r}
+vif(model_insurance)
+```
+
+Berdasarkan uji asumsi di atas, asumsi apa yang dilanggar?
+
+> Berdasarkan uji-uji diatas, asumsi yang dilanggar adalah asumsi
+> `Homoscedasticity`, `Normality of Residual`
+
+Karena asumsi ini dilanggar, kita akan melakukan penanganan.
+
+```{r}
+# Handle homoscedasticity
+prediktor <- train_ins %>% 
+  select(-charges, -region, -smoker, -sex)
+prediktor
+
+prediktor$charges <- train_ins$charges
+prediktor <- scale(prediktor)
+new_data<- prediktor
+new_data <- as.data.frame(new_data)
+new_data <- new_data %>% 
+  mutate(region = train_ins$region,
+         smoker = train_ins$smoker,
+         sex = train_ins$sex)
+
+model_insurance_new <- lm(formula = charges ~ ., data = new_data)
+summary(model_insurance_new)
+```
+
+5.  Berdasarkan model linear regression yang sudah dibuat, prediksilah
+    data test yang ada menggunakan model terbaik yang telah dibuat
+
+<!-- -->
+
+a.  Import data `test_insurance.csv` dan lakukan data wrangling seperti
+    yang dilakukan pada data train
+
+```{r}
+test <- read.csv("data_input/test_insurance.csv", stringsAsFactors = T)
+test
+```
+
+b.  Prediksi data test menggunakan model yang telah dibuat
+
+```{r}
+prediksi_insurance <- predict(model_insurance_new, newdata = new_data)
+```
+
+7.  Periksa error (MAPE) dari hasil prediksi data test
+
+```{r}
+MAPE(y_pred = model_insurance$fitted.values, y_true = train_ins$charges)*100
+MAPE(y_pred = model_insurance_new$fitted.values, y_true = new_data$charges)*100
+```
+
+8.  Kesimpulan
+
+Workflow Analisis Regresi Linear :
+
+1.  Import data
+2.  Data wrangling / EDA
+
+-   cek tipe data
+-   cek missing value
+-   cek korelasi antar variabel
+-   cek outlier
+
+3.  Pembuatan model
+
+-   cek summary model untuk mengintrepretasikan modelnya
+-   cek signifikansi prediktor variabel (p-value)
+-   cek r-squared(simple linear regression) atau adj r-squared (multiple
+    linear regression)
+
+4.  Tunning model (feature selection) -> stepwise
+5.  Prediksi terhadap new data
+6.  Model evaluation dengan mengecek nilai error
+
+-   RMSE
+-   MAE
+-   MAPE
+
+7.  Cek asumsi
+
+-   linearity
+-   normality of residual
+-   homoscedasticity
+-   no multicolinearity
