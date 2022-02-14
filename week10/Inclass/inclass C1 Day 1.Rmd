@@ -1,0 +1,487 @@
+---
+title: 'Classification 1 : In-class materials'
+author: "David"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+    df_print: paged
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+options(scipen = 9999)
+
+# libraries
+library(readr)
+library(tidyverse)
+```
+
+# Course Map
+
+<center>
+
+```{r, echo=FALSE}
+knitr::include_graphics("img/mindmapc1.png")
+```
+
+</center>
+
+# ML: Classification 1
+
+Dalam machine learning dan statistik, **classification** / klasifikasi
+adalah bentuk pendekatan supervised learning untuk memprediksi **label**
+dari suatu data dengan tipe **kategorikal**.
+
+**Contoh prediksi:**\
+- Spam/no spam?\
+- Loan default/no default?\
+- Customer churn/non churn?\
+- ...\
+- Yes/no?\
+- 1/0? (Positive/Negative?)
+
+# Introduction to (Binary) Classification using Logistic Regression
+
+Tujuan dari logistik regression adalah dengan menggunakan model regresi
+linier untuk memprediksi probability(yang dapat digunakan untuk
+klasifikasi).
+
+## Linear Regression vs Logistic Regression
+
+<center>
+
+```{r, echo=FALSE}
+knitr::include_graphics("img/download.png")
+```
+
+</center>
+
+### Probability v.s. Linear Regression
+
+Ide dari logistic regression mulanya berangkat dari model linear
+regression. Bedanya:\
+- **Linear regression:** digunakan untuk memprediksi angka kontinyu
+dengan range `-Inf to Inf`\
+- **Logistic regression:** digunakan untuk memprediksi probability
+dengan range: `0 to 1`
+
+Range regression: -Inf to Inf\
+Range probability: 0 to Inf
+
+### Probability
+
+Pada dasarnya, ketika kita melakukan klasifikasi, kita akan menghitung
+**peluang**.
+
+$$P(yes) = \frac{n(yes)}{n(yes) + n(no)}$$
+
+Case study: Saat H-2 Lebaran, terdapat 100 penerbangan di Soekarno-Hatta
+airport, dari 100 penerbangan tersebut, terdapat 20 penerbangan delay.
+Berapakah probability suatu penerbangan delay di Soekarno-Hatta?
+
+```{r}
+20 / 100
+
+```
+
+Peluang penerbangan tidak delay
+
+```{r}
+
+80 / 100
+```
+
+### Odds
+
+Odds adalah bentuk lain dari peluang yang memiliki rumus sebagai berikut
+$\frac{p}{(1-p)}$ dimana `p` adalah peluang suatu kejadian terjadi. Odds
+adalah **peluang kejadian terjadi/peluang kejadian tidak terjadi**.
+
+$$Odds(yes) = \frac{P(yes)}{1-P(yes)}$$
+
+Berapakah odds penerbangan terbang tepat waktu?
+
+```{r}
+
+80 / 20
+```
+
+Interpetasi: \> Penerbangan di soetta 4 kali lebih mungkin berangkat
+tepat waktu dibanding delay
+
+Berapa range nilai dari odds?
+
+```{r}
+# max
+max <- "inf"
+
+# min
+min <- 0
+
+```
+
+-   Probability: \[0,1\]
+-   Odds : \[0, inf\]
+
+### Log of Odds
+
+Log of odds adalah nilai odds yang dilogaritmikan (logit(p) =
+log(\frac{p}{1-p})) :
+
+Berapakah log(odds) dari penerbangan tepat waktu?
+
+```{r}
+
+log(0.8/0.2)
+```
+
+**Nilai log of odds tidak bisa diinterpretasikan**. Log of Odds
+dihasilkan oleh **Logistic Regression**. Nilai log of odds dapat
+dikembalikan ke bentuk odds dan peluang sehingga dapat digunakan untuk
+klasifikasi.
+
+*Discussion:* Bagaimana cara untuk mengembalikan nilai log(odds) ke
+peluang?
+
+log(odds) -> odds
+
+```{r}
+
+exp(1.386294)
+```
+
+odds -> probability
+
+$$p = \frac{odds}{1+odds}$$
+
+```{r}
+4/(1+4)
+```
+
+### Logit dan Inverse Logit
+
+Terdapat cara lain untuk mengubah peluang ke log of odds dengan fungsi
+`logit()` dan mengubah log of odds ke peluang dengan fungsi
+`inv.logit()`. Fungsi `inv.logit()` yang biasa disebut *sigmoidal
+logistic function*.
+
+```{r}
+library(gtools)
+logit(0.8) #mengubah probability menjadi log of odds
+inv.logit(1.386294) # mengubah log of odds menjadi probability
+```
+
+## Logistic Regression dengan `glm()`
+
+Business question:
+
+Sebagai seorang analis di suatu universitas, anda ditugaskan untuk
+memprediksi apakah siswa akan lulus dengan honors(cumlaude) atau tidak.
+
+Read data `sample.csv`
+
+```{r}
+honors <- read.csv("data_input/sample.csv") %>% 
+          select(-femalexmath)
+head(honors)
+```
+
+Deskripsi variabel:
+
+-   `female`: gender of student (1 for female, 0 for male)
+
+-   `read`: score in reading test
+
+-   `write`: score in writing test
+
+-   `math`: score in math test
+
+-   `hon`: status of graduating in honors (1 for honors, 0 for not
+    honors)
+
+-   cek missing value
+
+```{r}
+str(honors)
+```
+
+cek struktur data, kolom mana yang memiliki tipe data yang salah
+
+```{r}
+head(honors)
+```
+
+ubah tipe data yang masih salah
+
+```{r}
+honors <- honors %>% 
+  mutate(female = as.factor(female),
+         hon = as.factor(hon))
+```
+
+```{r}
+colSums(is.na(honors))
+```
+
+Buatlah sebuah model tanpa prediktor
+
+untuk membuat model logistic regression bisa menggunakan fungsi glm()
+terdapat 3 paramater yang kita gunakan yaitu formula : tempat
+mendefinisikan target dan predictor (y\~x) data : data yang digunakan
+untuk membuat model family : gunakan "binomial" bila ingin menggunakan
+logistic regression pada pemodelan ini
+
+```{r}
+model_null <- glm(hon ~ 1, data=honors, family="binomial")
+summary(model_null)
+```
+
+Kenapa didapati nilai koefisien sebesar -1.1255?
+
+**Interpretasi:**
+
+> Nilai intercept -1.1255, yakni merupakan nilai log of odds dari target
+> variabel (hon). Log of odds tidak dapat diinterpretasikan. Untuk
+> interpretasi, nilai log of odds kita ubah ke odds/peluang.
+
+```{r}
+# log of odds -> odds 
+odds <- exp(-1.1255)
+odds
+# log of odds -> prob
+inv.logit(-1.1255)
+```
+
+> Kejadian student lulus dengan predikat honors 0.32 KALI lebih mungkin
+> dibandingkan student lulus tanpa predikat honors.
+
+> Peluang student lulus dengan predikat honors adalah 0.24.
+
+> Student lebih mungkin untuk lulus tanpa predikat honors.
+
+**Note:**\
+Nilai log of odds tidak dapat diinterpretasi, untuk menginterpretasikan
+nilai *log(odds)*:\
+- dikembalikan ke odds dengan `exp()`\
+- dikembalikan ke p dengan inv.logit
+
+```{r}
+table(honors$hon)
+(49 / 200) / (151 / 200)
+log(0.3245033)
+```
+
+### Model dengan 1 prediktor kategorik
+
+Buatlah sebuah model dengan 1 prediktor, yakni female
+
+```{r}
+model_f <-  glm(hon ~ female, data=honors, family="binomial")
+summary(model_f)
+```
+
+Coefficient **Female** menjelaskan log of odds dari *female mendapat
+honor* dibandingkan *male mendapat honor*.
+
+**Bagaimana cara menginterpretasikan koefisien female?**
+
+```{r}
+# lakukan eksponen pada koef female
+exp(0.5928)
+inv.logit(0.5928)
+```
+
+> Kemungkinan perempuan memperoleh honors 1.8 kali lebih mungkin bila
+> dibandingkan pria mendapatkan honor
+
+**\[OPTIONAL\] Bagaimana cara mendapatkan nilai log of odds female?**
+
+```{r}
+table(honors = honors$hon, female = honors$female)
+```
+
+1.  Hitung peluang untuk female dan male
+
+```{r}
+# peluang female dapat honors
+honf <- 32/(77+32)
+# peluang male dapat honors
+honm <- 17/(17+74)
+
+```
+
+2.  Hitung nilai odds female dan male
+
+```{r}
+# odds
+oddsf <- honf/(1-honf)
+oddsm <- honm/(1-honm)
+```
+
+3.  Hitung nilai odds ratio
+
+```{r}
+oddsf/oddsm
+```
+
+4.  Hitung nilai log of odds ratio
+
+```{r}
+log(oddsf/oddsm)
+```
+
+**Question**
+
+Bila diketahui seorang siswi bernama Ajeng (female) masuk kedalam kelas
+berapa peluang dia mendapatkan penghargaan ketika lulus (honor = 1)?
+
+```{r}
+# Gunakan intercept dan coefficient tadi.
+```
+
+### Model dengan 1 prediktor numerik
+
+Buat model untuk memprediksi `honors` berdasarkan nilai `math`:
+
+```{r}
+model_math <- glm(hon ~ math, data=honors, family="binomial")
+summary(model_math)
+```
+
+**Interpretasi:**
+
+```{r}
+# log of odds -> odds
+exp(0.15634)
+```
+
+> Setiap kenaikan 1 nilai pada math maka odds seseorang mendapatkan
+> honor naik sebesar 1.17 KALI.
+
+**Intercept**: Log of odds dari student yang nilai mathnya 0.
+
+**Math**: Peningkatan log of odds setiap peningkatan 1 nilai di math.
+
+contoh:
+
+`hon = -9.79394 + 0.15634 * math`
+
+Student ke-1 memiliki nilai math 52, student kedua 53. Hitung
+masing-masing log of oddsnya, berapa selisihnya?
+
+```{r}
+# log of odds
+hon52 <- -9.79394 + 0.15634 * 52
+hon53 <- -9.79394 + 0.15634 * 53
+
+hon53-hon52
+```
+
+```{r}
+exp(hon53)/exp(hon52)
+```
+
+> Siswa dengan nilai 53 akan 1.17 KALI lebih mungkin mendapatkan honors
+> dibandingkan yang mendapat nilai 52.
+
+> Memiliki nilai math yang lebih tinggi meningkatkan peluang student
+> mendapatkan honors.
+
+```{r}
+inv.logit(hon52)
+```
+
+**Summary:**
+
+## Dive deeper
+
+Buatlah model yang dapat memprediksi seseorang akan lulus dengan
+predikat honors berdasarkan gender dan nilai math nya, kemudian jawablah
+pertanyaan berikut:
+
+1.  Interpretasi dari coefficient yang peroleh
+
+2.  Wulan memperoleh nilai math sebesar 60, berapa peluang Wulan
+    mendapatkan honors?
+
+3.  Handoyo memperoleh nilai math sebesar 70, berapa peluang Handoyo
+    mendapatkan honors?
+
+```{r}
+# buat model
+model_gender_math <- glm(hon ~ female + math, data=honors, family="binomial")
+
+summary(model_gender_math)
+```
+
+Jawab:
+
+1.  Interpretasi coefficient
+
+```{r}
+exp(0.96531)
+exp(0.16422)
+
+```
+
+> coefficient math: `Female`: 0.96531, `Math`: 0.16422.
+>
+> Odds female: 2.625601
+>
+> Odds math: 1.178474
+>
+> Artinya, Siswa dengan jenis kelamin perempuan memiliki peluang
+> `2.625601` kali lebih mungkin dibandingkan pria dalam mendapatkan
+> honors dengan menganggap nilai math konstan.
+>
+> Dengan menganggap Female score konstan, kenaikan 1 nilai pada nilai
+> Math, Odds nya akan mengalami kenaikan `1.178474` kali lebih mungkin
+> untuk mendapatkan honors.
+
+2.  Wulan memperoleh nilai math sebesar 60, berapa peluang Wulan
+    mendapatkan honors?
+
+3.  Handoyo memperoleh nilai math sebesar 70, berapa peluang Handoyo
+    mendapatkan honors?
+
+```{r}
+# Wulan: Female
+hon_wulan <- -10.80595 + 0.96531 * 1 + 0.16422 * 60
+hon_handoyo <- -10.80595 + 0.96531 * 0 + 0.16422 * 70
+
+inv.logit(hon_wulan)
+inv.logit(hon_handoyo)
+```
+
+convert peluang ke kategorik
+
+```{r}
+# gunakan fungsi ifelse
+convert_peluang <- function(p) {
+  if (p >= 0.5) {
+    return "Dapat honors"
+  } else {
+    
+  }
+}
+```
+
+------- End of Day 1 ------------
