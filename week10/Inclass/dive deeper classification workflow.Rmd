@@ -1,0 +1,167 @@
+---
+title: 'Dive Deeper: Classification Workflow'
+author: "Team Algoritma"
+date: "2/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(caret)
+library(dplyr)
+library(gtools)
+```
+
+# Dive Deeper: Costumer Churn
+
+## Business Question
+
+Customer churn rate merupakan salah satu topik penting untuk keberlanjutan bisnis perusahaan. Ingin dianalisis mengenai customer churn dari perusahaan telekomunikasi berdasarkan data dan demografi customer. Hasil prediksi untuk menentukan strategi marketing/costumer benefit selanjutnya terutama untuk yang akan churn.
+
+Variabel target:
+
+1.  Read Data
+
+```{r}
+customer <- read.csv("data_tambahan/watson-churn.csv")
+head(customer)
+```
+
+Deskripsi kolom:
+
+-   CustomerID: Customer ID
+-   Gender: Whether the customer is a male or a female
+-   SeniorCitizen: Whether the customer is a senior citizen or not (1, 0)
+-   Partner: Whether the customer has a partner or not (Yes, No)
+-   Dependents: Whether the customer has dependents or not (Yes, No)
+-   Tenure: Number of months the customer has stayed with the company
+-   MultipleLines: Whether the customer has multiple lines or not (Yes, No, No phone service)
+-   OnlineSecurity: Whether the customer has online security or not
+-   OnlineBackup: Whether the customer has online backup or not
+-   DeviceProtection: Whether the customer has device protection or not
+-   TechSupport: Whether the customer has tech support or not
+-   StreamingTV: Whether the customer has streaming TV or not
+-   StreamingMovies: Whether the customer has streaming movies or not
+-   Contract: The contract term of the customer (Month-to-month, One year, Two year)
+-   PaperlessBilling: Whether the customer has paperless billing or not (Yes, No)
+-   PaymentMethod: The customer's payment method (Electronic check, Mailed check, Bank transfer (automatic), Credit card (automatic))
+-   MonthlyCharges: The amount charged to the customer monthly
+-   TotalCharges: The total amount charged to the customer
+-   Churn: Whether the customer churned or not (Yes or No)
+
+2.  Data Wrangling
+
+-   Adakah variabel yang tipe datanya belum sesuai?
+
+> -   Gender -> factor
+>
+> -   SeniorCitizen -> factor
+>
+> -   Partner -> factor
+>
+> -   Dependents -> factor
+>
+> -   MultipleLines s.d. PaymentMethod -> factor
+>
+> -    Churn (Target) -> factor
+
+```{r}
+# cek struktur data 
+str(customer)
+```
+
+-   Adakah variabel yang tidak perlu digunakan dalam pemodelan?
+
+Insight:
+
+-    `SeniorCitizenship` memiliki proporsi yang sangat berbeda. Fitur ini merupakan salah satu contoh dari *zero variance*
+
+-   Kita akan hapus kolom `customerID`, dikarenakan kolom ini bersifat nominal dan tidak memberikan arti apa-apa dalam pemodelan.
+
+```{r}
+summary(customer)
+```
+
+```{r}
+customer_clean <- customer %>% 
+  select(-customerID, -SeniorCitizen) %>% 
+  mutate_if(is.character, as.factor)
+
+```
+
+3.  Exploratory Data analysis
+
+-   Apakah proporsi target variabel seimbang?
+
+Proporsi variabel target 67%: 32%, hal ini masih bisa ditoleransi.
+
+```{r}
+table(customer_clean$Churn) %>% 
+  prop.table()
+```
+
+-   Apakah terdapat missing value pada data?
+
+Terdapat missing value pada fitur `TotalCharges`
+
+```{r}
+colSums(is.na(customer_clean))
+```
+
+-   Handle missing value
+
+```{r}
+# anda bisa menghapus data yang mengandung missing value
+
+customer_clean <- na.omit(customer_clean)
+```
+
+4.  Lakukan cross validation
+
+```{r}
+set.seed(100)
+
+
+```
+
+5.  membuat model logistic regresion (Modelling)
+
+```{r}
+# buat model menggunakan semua predictor
+
+model_churn <-
+
+```
+
+-   lakukan Feature selection menggunakan stepwise
+
+```{r}
+model_step <- 
+```
+
+5.  Prediction
+
+```{r}
+
+
+```
+
+--- End of Dive Deeper ---
+
+6.  Model Evaluation
+
+```{r}
+
+
+
+```
+
+7.  Tuning Model
+
+```{r}
+
+
+```
