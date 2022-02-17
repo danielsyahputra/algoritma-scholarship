@@ -1,0 +1,122 @@
+---
+title: "Briefing DV capstone"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: 
+ html_document:
+   toc: true
+   toc_float: true
+   highlight: zenburn
+   df_print: paged
+   theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+File ini berisi template untuk mejawab pertanyaan 5W+1H saat briefing Capstone Data Visualization sebagai langkah awal sebelum membuat Dashboard. Silakan Bapak/Ibu mengisi jawaban di bawah.
+
+File ini tidak akan dinilai namun Bapak/Ibu **WAJIB** disubmit ke dalam classroom pada hari H briefing Capstone Data Visualization.
+
+# What
+
+Tentukan tujuan atau informasi yang ingin ditampilkan dalam dashboard
+
+**Jawab**
+
+Tujuan yang ingin dicapai atau informasi yang ingin disampaikan:
+
+Pada *capstone project* ini saya akan menggunakan data marketing yang saya dapatkan dari Kaggle. Pada marketing terdapat istilah 4 P's yaitu *Product, Price, Place,* dan *Promotion.* Namun, karena pada data ini tidak terdapat informasi mengenai *price,* saya akan mengganti *Price* menjadi *People* sehingga 4 P's yang saya gunakan adalah *people, product, place,* dan *promotion*. Informasi yang akan saya tampikan akan seputar 4 P's. Beberapa informasi yang ingin saya tampikan terkait 4 P's sebagai berikut:
+
+-   People -> Menampilkan informasi terkait *customer* seperti sebaran *income,* jumlah tanggungan, distribusi *income* berdasarkan pendidikan atau status perkawinan.
+
+-   Product -> Menampilkan informasi terkait sebaran pengeluaran yang *customer* gunakan untuk membeli setiap produk.
+
+-   Place -> Menampilkan visualisasi terkait plaform yang digunakan *customer* untuk berbelanja. Pada dataset ini, terdapat 3 media yang digunakan *customer* untuk berbelanja yaitu melalui web, catalog, atau langsung ke toko.
+
+-   Promotion -> Menampilkan visualisasi terkait *campaign* yang sudah disebarkan dan berapa banyak *customer* yang tertarik ke *campaign* tersebut.
+
+# Who
+
+Untuk siapa dashboard ini dibuat? Siapa target pembaca dari dashboard ini?
+
+**Jawab:**
+
+Dashboard ini dibuat untuk tim eksekutif atau marketing perusahaan untuk nantinya digunakan dalam menentukan keputusan terkait cara memasarkan produk di perusahaan mereka.
+
+# Why
+
+Apakah data yang dibuat relevan atau sesuai dengan tujuan? Mengapa?
+
+**Jawab**
+
+Data diambil dari [Kaggle](https://www.kaggle.com/jackdaoud/marketing-data) dan informasi pada dataset cukup untuk menyelesaikan hal yang ingin saya sampaikan di dashboard.
+
+# When
+
+Apakah data yang digunakan masih *up to date* atau masih relevan dengan kondisi sekarang? Apakah ada informasi tentang tanggal update terakhir dari data tersebut?
+
+**Jawab**
+
+Data yang disediakan di kaggle ini memang adalah data *dummy* karena data pelanggan dari perusahaan jarang disebarluaskan. Namun, untuk menjawab pertanyaan bisnis data tersebut cukup relevan.
+
+# How
+
+Bagaimana Bapak/Ibu menggunakan visualisasi untuk menjawab tujuan yang telah disebutkan?
+
+Buat plot yang akan dimasukkan ke dalam dashboard. Boleh dalam bentuk `ggplot` maupun `plotly`.
+
+**Jawab:** Saya masih dalam proses *data preparation*.
+
+Plot untuk menjawab tujuan pertama
+
+```{r}
+# your code here
+```
+
+Plot kedua
+
+```{r}
+# your code here
+```
+
+Plot ketiga
+
+```{r}
+# your code here
+```
+
+Buat chunk baru apabila ada lebih dari 3 plot.
+
+# Where
+
+Bagaimana desain layout atau tata letak dashboard yang akan dibuat?
+
+**Jawab**
+
+Contoh penulisan layout.
+
+Halaman **People**
+
+-   Bagian atas ada info box (Untuk Overview)
+
+-   Di bawah info box akan menampilkan visualisasi yang telah saya sampaikan pada bagian **What**
+
+Halaman **Product**
+
+-   Bagian atas ada info box (Untuk Overview)
+
+-   Di bawah info box akan menampilkan visualisasi yang telah saya sampaikan pada bagian **What**
+
+Halaman **Place**
+
+-   Bagian atas ada info box (Untuk Overview)
+
+-   Di bawah info box akan menampilkan visualisasi yang telah saya sampaikan pada bagian **What**
+
+Halaman **Promotion**
+
+-   Bagian atas ada info box (Untuk Overview)
+
+-   Di bawah info box akan menampilkan visualisasi yang telah saya sampaikan pada bagian **What**
