@@ -115,8 +115,8 @@ colSums(is.na(customer_clean))
 
 ```{r}
 # anda bisa menghapus data yang mengandung missing value
-
-customer_clean <- na.omit(customer_clean)
+customer_clean <- customer_clean %>% 
+  drop_na()
 ```
 
 4.  Lakukan cross validation
@@ -124,29 +124,34 @@ customer_clean <- na.omit(customer_clean)
 ```{r}
 set.seed(100)
 
+index_customers <- sample(x = nrow(customer_clean), size = nrow(customer_clean) * 0.8)
 
+customer_train <- customer_clean[index_customers, ]
+customer_test <- customer_clean[-index_customers, ]
+nrow(customer_train)
+nrow(customer_test)
 ```
 
 5.  membuat model logistic regresion (Modelling)
 
 ```{r}
 # buat model menggunakan semua predictor
-
-model_churn <-
-
+model_customer <- glm(formula = Churn ~ ., data = customer_train, family = "binomial")
 ```
 
 -   lakukan Feature selection menggunakan stepwise
 
 ```{r}
-model_step <- 
+model_step <- step(object = model_customer, direction="backward", trace=0)
 ```
 
 5.  Prediction
 
 ```{r}
 
-
+customer_pred <- predict(object = model_step, newdata = customer_test, type = "response")
+customer_pred_label <- as.factor(ifelse(test = customer_pred > 0.5, "Yes", "No"))
+table(customer_pred_label)
 ```
 
 --- End of Dive Deeper ---

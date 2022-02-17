@@ -162,7 +162,7 @@ peluang/(1-peluang)
 -   Odds : 0 to inf
 
 ```{r}
-#logit(0.4)
+logit(0.4)
 ```
 
 ### Log of Odds
@@ -950,6 +950,7 @@ loans_clean
 -   **Check Class Imbalance**
 
 ```{r}
+# yang perlu di cek keseimbangannya adalah kelas target
 loans_clean$not_paid %>% 
   table() %>% 
   prop.table()
@@ -969,6 +970,37 @@ Proporsi yang imbalance umumnya 90/10 atau 95/5.
 -------------------End of Day 2--------------------------
 
 #### Cross Validation
+
+100 gambar
+
+data yang dipakai untuk belajar 80%
+
+depan : gambar belakng jawwab
+
+data yang digunakan untuk mengevaluasi proses pembelajaran (20%) dari 20
+gambar, berapa banyak sih yang ditebak dengan benar?
+
+50 : mobil 50 : motor
+
+cross validation itu memisahkan data menjadi 2 bagian yaitu data train
+dan data test data train : akan digunakan pada saat proses pembuatan
+model 80% data test : akan digunakan pada saaat mengevaluasi model
+(predict) 20%
+
+data full : - 0 : 75% - 1 : 25%
+
+apakah datanya diseimbangkan dulu baru di split, atau datanya di split
+dulu kemudian data train diseimbangkan?
+
+data test harus seoriginal mungkin, karena data test harus menggambarkan
+kondisi data di lapangan. split data terlebih dahulu, kemudian data
+train di seimbangkan
+
+data full : - 0 : 75% - 1 : 25%
+
+data test : - 0 : 75% - 1 : 25%
+
+data train (sudah di seimbangkan) : - 0 : 50% - 1 : 50%
 
 Jika kita ingin melakukan sebuah prediksi, maka kita tidak disarankan
 melihat nilai error pada data yang digunakan untuk melatih model, karena
@@ -1001,24 +1033,27 @@ Analogi:
 tujuan dari cross validation adalah untuk mengetahui seberapa baik model
 yg sudah kita buat.
 
-> `set.seed()` digunakan untuk mengunci sifat random dari fungsi sampel.
+1,556 data : 80% nya akan digunakan sebagai data train, sisanya 20% akan
+digunakan sebagai data testing. proses pemmgabilan data dilakukan secara
+acak
+
+set.seed digunakan untuk mengunci sifat random dari fungsi sample()
 
 ```{r}
-# RNGkind agar hasil yang dikeluarkan pada R versi 3.x sama dengan 4.x
+# agar hasil yang dikeluarkan pada R versi 3.x sama dengan R versi 4.x
 RNGkind(sample.kind = "Rounding")
-set.seed(417)
+# set.seed digunakan untuk mengunci sifat random dari fungsi sample()
+set.seed(417) # anggap saja angka ini sebagai password
 
-index_loan <- sample(x = nrow(loans_clean), size = nrow(loans_clean) * 0.8)
-
-loan_train <- loans_clean[index_loan, ]
-loan_test <- loans_clean[-index_loan, ]
+index_loan <- sample(x = nrow(loans_clean) , size = nrow(loans_clean)*0.8) 
+loan_train <- loans_clean[index_loan , ]
+loan_test <- loans_clean[-index_loan, ] # tanda - berarti negasi
 ```
 
 NOTE: Proporsi 0.8/0.2 tidak mutlak, tergantung kebutuhan kita.
 
 ```{r}
 # re-check class imbalance
-
 loan_train$not_paid %>% 
   table() %>% 
   prop.table()
@@ -1032,13 +1067,12 @@ melatih model menggunakan data train.
 Membuat model berdasarkan business knowledge dan arahan yang sudah ada:
 
 ```{r }
-creditrisk <- glm(formula = not_paid ~ ., data = loan_train, family = "binomial")
-
+creditrisk <- glm(formula = not_paid ~ . , data = loan_train, family = "binomial")
 summary(creditrisk)
 ```
 
 ```{r}
-levels(loan_train$purpose)
+summary(loan_train$home_ownership)
 ```
 
 Interpretasi:
@@ -1056,16 +1090,17 @@ Interpretasi untuk parameter:
 > purpose credit card, dengan catatan variabel lainnya memiliki nilai
 > yang sama
 
-> int_rate: Setiap kenaikan int_rate sebesar 1 unit maka kecenderungan
+> int_rate: Setiap kenaikan int_rate sebesar 1 satuan maka kecenderungan
 > nasabah untuk gagal bayar naik sebesar 1.01 kali dengan catatan
 > variabel lainnya konstan
 
 Lakukan feature selection menggunakan stepwise
 
+menghilangkan predictor satu persatu sampai didapati nilai AIC terrendah
+
 ```{r}
 # logistic regression juga dapat menggunakan step
-creditrisk2 <- step(object = creditrisk, 
-                    direction =  "backward", trace = 0)
+creditrisk2 <- step(object = creditrisk, direction="backward", trace = 0)
 summary(creditrisk2)
 ```
 
@@ -1083,15 +1118,39 @@ type memiliki 2 nilai yaitu `response` dan `link`:
 loan_pred <- predict(object = creditrisk2, newdata = loan_test, type = "response")
 ```
 
+mas saya bingung cari tau yang peluangnya lebih dari 0.5 itu yang "1"
+atau "0"
+
+```{r}
+levels(loan_test$not_paid)
+```
+
+Label: "0" x "1" Probability: 0 0.5 1
+
 ```{r}
 # ubah probability menjadi label 
-loan_pred_label <- as.factor(ifelse(test = loan_pred > 0.5, "1", "0"))
+loan_pred_label <- as.factor(ifelse(loan_pred > 0.5, "1", "0")) 
 ```
+
+berapa banyak dari data test yang diprediksi 1?
 
 ```{r}
 table(loan_pred_label)
-levels(loan_train$not)
 ```
+
+Target berupa numeric : error = actual - predict (RMSE, MSE) Target
+berupa categoric: label pada hasil prediksi dengan actual apakah sama
+atau beda
+
+```{r}
+table(predict = loan_pred_label, 
+      actual = loan_test$not_paid)
+```
+
+TRUE : diprediksi dengan benar FALSE : diprediski dengan salah
+
+Positive: kelas yang menjadi fokus amantan Negative: yang bukan fokus
+amatan
 
 #### Model Evaluation
 
@@ -1112,24 +1171,18 @@ model berdasarkan confusion matrix:
 knitr::include_graphics("img/tnfp.PNG")
 ```
 
-```{r}
-# confusion matrix sederhana
-table(predicted = loan_pred_label,
-      actual = loan_test$not_paid)
-```
-
 4 metrics performa model: Accuracy, Sensitivity/Recall, Precision,
 Specificity
 
 ```{r}
 library(caret)
-
 confusionMatrix(data = loan_pred_label, reference = loan_test$not_paid, positive = "1")
 ```
 
 -   Accuracy: seberapa tepat model kita memprediksi kelas target (secara
     global)\
--   Sensitivity/ Recall: ukuran kebaikan model terhadap kelas `positif`\
+-   Sensitivity/ Recall: ukuran kebaikan model terhadap kelas `positif`
+    \
 -   Specificity: ukuran kebaikan model terhadap kelas `negatif`\
 -   Pos Pred Value/Precision: seberapa presisi model memprediksi kelas
     positif
@@ -1143,8 +1196,14 @@ atau ketika proporsi kelas seimbang.
 (TP+TN/TOTAL)
 
 ```{r}
-(87+94)/312
+(94+97)/nrow(loan_test)
 ```
+
+100 Data 90 No 10 Yes
+
+churn yes
+
+Accuracy : 89%
 
 Dalam bisnis/real-case, tak selamanya kita hanya mementingkan metric
 accuracy. Sering kali harus memilih antara meninggikan
@@ -1171,6 +1230,38 @@ di**pre**diksi positif.
 94/(94+74)
 ```
 
+Cara memilih recall/ precision sebagai metrics?
+
+1\. Definisikan dahulu kelas positive-nya (covid)
+
+2\. Definisisikan resiko dari kesalahan prediksi
+
+FN :
+
+actual: Covid -> predict :sehat
+
+\- persebaran covid akan lebih cepat diluar sana
+
+\- ...
+
+\- ...
+
+FP : actual: Sehat -> predict : Covid
+
+\- Beban mental, karena dikucilkan warga
+
+\- ...
+
+\- ...
+
+3\. Kesalahan mana yang bisa kita toleransi (ambil yang terbaik dari
+yang terburuk)
+
+\- Kita gunakan \*recall\* ketika FP ditoleransi. prediksi aja semuanya
+covid (kasarnya)
+
+\- kita gunakan \*precision\* ketika FN ditoleransi.
+
 ROLE PLAY:
 
 1.  Seorang dokter ingin mendiagnosa pasien kanker menggunakan model
@@ -1180,23 +1271,25 @@ ROLE PLAY:
 
 -   Target variabel = kanker/non-kanker
 -   Kelas positif = kanker
--   Metrics =
+-   Metrics = Recall, karena kalau penyakitnya makin dibiarin makin
+    bahaya.
 
 2.  Kita ingin membuat model prediksi untuk mengklasifikasikan e-mail
     spam/ham. Metrics mana yang lebih kita utamakan?
 
 -   Target variabel = spam/ham
 -   Kelas positif = spam
--   Metrics =
+-   Metrics = Precision, karena kita ga mau email penting tapi malah
+    masuk spam.
 
 3.  Bila ada seorang **seller** dan **bos**nya yang hendak menawarkan
     produk perusahaan ke 1000 calon pelanggan. Ingin dibuat model
     prediksi dimana positive = pelanggan membeli produk. Maka siapa yang
     mementingkan recall, siapa yang mementingkan precision?
 
-**Bos**:
+**Bos**: Precision
 
-**Seller**:
+**Seller**: Precision
 
 **Recall/Precision amat bergantung dengan pandangan bisnis kita dan
 akibat yang ditimbulkan.**
@@ -1280,12 +1373,165 @@ knitr::include_graphics("img/histology-examples.png")
 ### Read Data
 
 ```{r}
-
-
+wbcd <- read.csv("data_input/wisc_bc_data.csv")
 ```
 
 ```{r}
-# inspect data
+# cek struktur data
 
+str(wbcd)
+```
+
+### Data Wrangling
+
+Adakah kolom yang perlu dibuang dan tipe data yang harus diubah? -
+Membuang kolom id - Mengubah kolom diagnosis menjadi factor dan
+mengganti label nya menjadi "Benign" dan "Malignant"
+
+```{r}
+wbcd_clean <- wbcd %>% 
+  select(-id) %>% 
+  mutate(diagnosis = ifelse(diagnosis == "B", "Benign", "Malignant"),
+         diagnosis = as.factor(diagnosis))
 
 ```
+
+### Exploratory Data Analysis
+
+-   **cek proporsi kelas**: ingin yang seimbang
+-   **cek range nilai tiap variable prediktor**: range harus sama karena
+    knn mengklasifikasikan berdasarkan jarak. Jika terdapat range nilai
+    yang berbeda jauh antar variabel, maka variable tersebut akan sangat
+    mempengaruhi hasil klasifikasi dan mengabaikan variable yang lain.
+    Oleh karena itu perlu dilakukan scalling.
+
+```{r}
+# target class proportion
+prop.table(table(wbcd$diagnosis))
+```
+
+```{r}
+# cek range nilai tiap variable
+summary(wbcd)
+```
+
+Range tiap variabel berbeda sehingga perlu dilakukan feature rescaling
+di tahap *data pre-processing*, bisa menggunakan *min-max normalization*
+atau *z-score standarization*.
+
+### Data Pre-Processing
+
+#### Scaling
+
+1.  Min-Max Normalization
+
+```{r}
+normalize <- function(x){
+  return ( 
+    (x - min(x))/(max(x) - min(x)) 
+           )
+}
+```
+
+```{r}
+# contoh:
+normalize(c(1,2,3,4,5))
+```
+
+2.  Z-score Standarization: dapat menggunakan function `scale()`
+
+```{r}
+scale(c(1,2,3,4,5))
+```
+
+Note: - Min-Max/normalize range 0 s/d 1 - z-score range -inf s/d +inf
+
+### Cross Validation
+
+```{r}
+set.seed(100)
+index_wbcd <- sample(nrow(wbcd_clean), nrow(wbcd_clean)*0.8)
+wbcd_train <- wbcd_clean[index_wbcd,]
+wbcd_test <- wbcd_clean[-index_wbcd,]
+```
+
+Sebelum melakukan scaling kita perlu misahkan predictor dan target
+
+```{r}
+# prediktor data train
+train_x <- wbcd_train %>% 
+            select_if(is.numeric) 
+
+#target data train
+train_y <- wbcd_train %>% 
+           select(diagnosis) 
+
+# prediktor data test
+test_x <- wbcd_test %>% 
+  select_if(is.numeric)
+
+test_y <- wbcd_test %>% 
+  select(diagnosis)
+```
+
+Lakukan scaling untuk data train dan dan data tes
+
+```{r}
+train_x_scaled <- scale(train_x)
+test_x_scaled <- scale(test_x,
+                center = attr(train_x_scaled,"scaled:center"),
+                scale = attr(train_x_scaled, "scaled:scale"))
+
+```
+
+Pemilihan nilai k dari akar observasi (data train)
+
+```{r}
+
+k <- sqrt(nrow(train_x))
+
+k <- round(k)
+k
+```
+
+lakukan pemodelan menggunakan fungsi knn() dari package class
+
+```{r}
+library(class)
+wbcd_pred <- knn(train = train_x_scaled, test = test_x_scaled, cl = train_y$diagnosis, k = 21) 
+```
+
+### Evaluation Model
+
+```{r}
+library(caret) 
+
+confusionMatrix(data = wbcd_pred, reference = test_y$diagnosis, positive = "Malignant")
+```
+
+## Characteristics of k-NN
+
+Advantages:
+
+\+ Sangat sederhana
+
+\+ accuracy cukup baik
+
+\+ Mengurangi efek outlier (karena adanya scaling)
+
+\+ Dapat diaplikasikan untuk target variabel yang lebih dua
+
+Disadvantages:
+
+\- dia tidak membuat model, tidak menampilkan peluang, dan tidak bisa
+diinterpretasi
+
+\- hanya bagus untuk data yang numerik
+
+\- komputasinya lambat
+
+How to improve KNN result?
+
+\- mengganti nilai K
+
+\- Menambah jumlah observasi
