@@ -1,0 +1,11 @@
+title, h1, h2 {
+  font-weight: 400;
+} 
+
+title, author, date {
+  text-align: center;
+}
+
+body {
+  text-align: justify;
+}
