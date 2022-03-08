@@ -1,0 +1,233 @@
+---
+title: "Excercise UL"
+author: "Your Name"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+    df_print: paged
+---
+
+```{=html}
+<style>
+
+body {
+text-align: justify}
+
+</style>
+```
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+
+options(scipen = 9999)
+```
+
+```{r}
+library(dplyr)
+library(factoextra)
+library(FactoMineR)
+```
+
+## Business Question
+
+Ingin dilakukan segmentasi customer dari sebuah perusahaan wholesale berdasarkan karakteristik tiap customer dalam membeli produk. Perusahaan memiliki data pembelian ragam tipe produk dari masing-masing customer di folder `data_input/wholesale.csv`. Manfaatkan pengetahuan tentang PCA dan kmeans untuk melakukan segmentasi customer!
+
+```{r}
+# read data
+wholesale <- read.csv("data_input/wholesale.csv")
+
+# cek data
+head(wholesale)
+```
+
+Deskripsi kolom:
+
+-   Channel: Horeca (1)/Retail (2)
+-   Region: Lokasi branch perusahaan wholesale
+-   Fresh, Milk, Grocery, Frozen, Detergents_Paper, Delicassen: jumlah pembelian untuk masing-masing tipe produk
+
+## Data Cleaning
+
+Adakah kolom yang tak diperlukan atau perlu diperbaiki?
+
+-   
+
+```{r}
+# data cleaning
+wholesale <- wholesale %>% 
+  mutate(Channel = as.factor(Channel),
+         Region = as.factor(Region))
+```
+
+## EDA
+
+```{r}
+# cek NA
+anyNA(wholesale)
+```
+
+```{r}
+# cek summary
+summary(wholesale)
+```
+
+Apakah perlu dilakukan scaling? **Ya**
+
+## PCA
+
+Sebelum melakukan clustering, mari lihat apakah terdapat outlier pada data. Outlier akan sangat mempengaruhi hasil clustering sehingga akan lebih baik bila kita menghilangkanterlebih dahulu outlier dari data. Outlier dapat divisualisasikan dengan biplot dari hasil PCA.
+
+note: scaling hanya dilakukan 1 kali, tergantung kenyamanan: di dalam/di luar fungsi
+
+```{r}
+# buat PCA
+
+quali <- wholesale %>% 
+  select_if(is.factor) %>% 
+  colnames()
+
+# indeks kolom kategorik
+qualivar <- which(colnames(wholesale) %in% quali)
+
+wholesale_pca <- PCA(X = wholesale, 
+                scale.unit = TRUE,
+                quali.sup = qualivar,
+                graph = FALSE,
+                ncp = 6)
+```
+
+```{r}
+# buat plot
+plot.PCA(x = wholesale_pca , 
+         choix = "ind",
+         invisible = "quali",
+         select = "contrib 5") 
+```
+
+## Temukan 5 baris data yang menjadi outlier!
+
+-   Baris yang outlier: 48, 62, 86, 184, 326
+
+**Pertanyaan bonus**: berapa PC yang perlu diambil bila ingin mereduksi dimensi dan mempertahankan setidaknya 80% informasi? **3 Principal Component**
+
+```{r}
+# cek variansi yang dirangkum tiap PC
+wholesale_pca$eig
+```
+
+Notes: Bila PCA digunakan untuk deteksi outlier, maka **tidak perlu** seleksi PC dan ambil data hasil PCA untuk dibalikan ke data awal, karena tujuannya sudah berbeda.
+
+Tujuan disini kita hanya mendeteksi indeks data yg outlier, kemudian membuangnya dari data, kemudian data yg bersih dari outlier bisa dilanjutkan untuk clustering.
+
+## Clustering
+
+Sebelum melakukan clustering, perlukah kita melakukan scaling?
+
+```{r}
+# scaling
+ws_cat <- wholesale %>% 
+  select_if(is.factor)
+
+ws_num <- wholesale %>% 
+  select_if(is.numeric)
+ws_scale <- scale(ws_num)
+ws_clean <- ws_cat %>% 
+  cbind(ws_scale)
+
+ws_clean
+```
+
+### Pilih `k` Optimum
+
+carilah K optimum dengan menggunakan elbow plot.
+
+```{r}
+library(factoextra)
+
+fviz_nbclust(x= ws_scale,
+             FUNcluster = kmeans,
+             method = "wss"
+             )
+```
+
+k = 5
+
+Note: Tidak ada benar/salah, tinggal bagaimana baik hasil clustering tersebut saat kita lakukan profiling. Diinginkan hasil clustering yang dapat diprofiling dengan baik agar bisa bermanfaat untuk bisnis.
+
+Buat clustering dan simpan hasil clustering pada objek `ws_kmeans`
+
+```{r}
+RNGkind(sample.kind = "Rounding")
+set.seed(101)
+ws_kmeans <- kmeans(x= ws_scale, centers = 5)
+```
+
+### Cluster Profiling
+
+```{r}
+# kembalikan hasil cluster ke data awal
+ws_num$cluster <- ws_kmeans$cluster
+
+# profiling
+ws_profile <- ws_num %>% 
+  group_by(cluster) %>% 
+  summarise_all(mean)
+
+ws_profile %>% 
+  tidyr::pivot_longer(-cluster) %>% 
+  group_by(name) %>% 
+  summarize(cluster_min_val = which.min(value),
+            cluster_max_val = which.max(value))
+
+ws_profile
+
+```
+
+```{r}
+fviz_cluster(object = ws_kmeans, data = ws_num )
+
+```
+
+```{r}
+ws_pca <- PCA(X = ws_clean,quali.sup = qualivar, scale.unit = F, graph = F)
+fviz_pca_biplot(ws_pca, addEllipses = T, habillage = 9)
+```
+
+**Insight:**
+
+-   TUGAS
+-   dst.
+
+**Discussion:**
+
+Seorang customer dengan customer ID (indeks baris) 42 akan memiliki kecenderungan pola pembelian produk yang seperti apa? Apa yang strategi bisnis yang dapat kita terapkan untuk customer tersebut?
+
+```{r}
+# your code
+ws_clean[42,]
+```
+
+Jawaban: Customer ID 42 termasuk ke dalam cluster 2. Sehingga, rekomendasi produk untuk customer ini adalah produk-produk yang kita definisikan pada cluster profiling sebelumnya.
+
+Berapa banyak customer yang memiliki kemiripan karakteristik dengan customer dengan ID 42 tersebut?
+
+```{r}
+ws_clean %>% 
+  filter(cluster == 2) %>% 
+  nrow()
+```
+
+Jawaban: Ada 371 customer yang memiliki karakteristik yang sama dengan Customer dengan ID 42 (termasuk diriinya sendiri).

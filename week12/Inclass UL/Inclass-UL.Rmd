@@ -165,7 +165,7 @@ Data Blind Tasting tetap bisa diaplikasikan PCA. Namun hasilnya kurang baik kare
 
 💡 Kunjungi link berikut untuk ilustrasi secara visual untuk data 2D dan 3D: <https://setosa.io/ev/principal-component-analysis/>
 
-⚠️ **Miskonsepsi garis PCA dengan garis Linear Regression**
+**Miskonsepsi garis PCA dengan garis Linear Regression**
 
 ```{r, out.width = "49%", out.height = "20%", echo = FALSE, fig.align = "center", fig.show = "hold"}
 knitr::include_graphics(c(
@@ -247,21 +247,43 @@ Perhatikan yang character:
 -   `SALE.DATE`:
 
 ```{r warning=FALSE}
-property_clean <- 
+property_clean <- read.csv("data_input/nyc.csv")
 
 head(property_clean)
+```
+
+```{r}
+property_clean <- property_clean %>% 
+  select(-X,-EASE.MENT) %>% 
+  mutate(BOROUGH = as.factor(BOROUGH),
+         BLOCK = as.factor(BLOCK),
+         LOT = as.factor(LOT),
+         ZIP.CODE = as.factor(ZIP.CODE),
+         YEAR.BUILT = as.factor(YEAR.BUILT),
+         RESIDENTIAL.UNITS = as.numeric(RESIDENTIAL.UNITS),
+         COMMERCIAL.UNITS = as.numeric(COMMERCIAL.UNITS),
+         TOTAL.UNITS = as.numeric(TOTAL.UNITS),
+         TAX.CLASS.AT.TIME.OF.SALE = as.factor(TAX.CLASS.AT.TIME.OF.SALE)) %>% 
+  mutate(NEIGHBORHOOD = as.factor(NEIGHBORHOOD),
+         BUILDING.CLASS.CATEGORY = as.factor(BUILDING.CLASS.CATEGORY),
+         BUILDING.CLASS.AT.PRESENT = as.factor(BUILDING.CLASS.AT.PRESENT),
+         BUILDING.CLASS.AT.TIME.OF.SALE = as.factor(BUILDING.CLASS.AT.TIME.OF.SALE),
+         TAX.CLASS.AT.PRESENT = as.factor(TAX.CLASS.AT.PRESENT),
+         LAND.SQUARE.FEET = as.numeric(LAND.SQUARE.FEET),
+         SALE.PRICE = as.numeric(SALE.PRICE),
+         SALE.DATE = as.Date(SALE.DATE))
 ```
 
 Cek missing values:
 
 ```{r}
 # cek apakah ada atau tidaknya NA
-
+anyNA(property_clean)
 ```
 
 ```{r}
 # Cek seberapa banyak jumlah NA pada masing-masing kolom
-
+colSums(is.na(property_clean))
 ```
 
 Kolom dengan missing values:
