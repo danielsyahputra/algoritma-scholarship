@@ -1,0 +1,132 @@
+---
+title: 'Diver Deeper: TS'
+author: "Team Algoritma"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: no
+    number_sections: true
+    df_print: paged
+    theme: cosmo
+    highlight: tango
+    css: assets/inclass_style.css
+---
+
+```{r setup, include=FALSE}
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+
+# load library
+
+library(dplyr) # data wrangling
+library(lubridate) # date manipulation
+library(forecast) # time series library
+library(TTR) # for Simple moving average function
+library(MLmetrics) # calculate error
+library(ggplot2)
+library(tidyr)
+```
+
+```{r}
+set.seed(1041)
+sample(c(1:4), 1)
+```
+
+# Dive Deeper
+
+Kita akan coba menggunakan data `births` terdiri dari 168 observasi tingkat kelahiran per bulan di New York. Data ini terdiri dari 2 variabel, yaitu:
+
+* `date`: tanggal.
+* `births`: tingkat kelahiran.
+
+> data birth data tingkat kelahiran di new york city dari tahun Jan 1946 - Des 1959
+
+1. Read data `nybirth.csv`
+```{r}
+# read nybirth.csv
+birth <- read.csv("data_input/nybirth.csv")
+head(birth)
+```
+
+2. cek class data `birth`
+```{r}
+class(birth)
+```
+
+3. membuat object ts dari data `birth` dan disimpan dalam object `birth_ts` dengan data yang terkumpul adalah data bulanan dengan pola yang ingin dilihat adalah tahunan
+
+```{r}
+# answer here
+birth_ts <- ts(birth_clean$births, start = c(1946,1), frequency = 12)
+```
+
+4. Visualisasi object `birth_ts` menggunakan `autoplot()`
+```{r}
+birth_ts %>% autoplot()
+```
+
+Buatlah model time series yang tepat untuk data tersebut, analisislah pola time series yang ada pada data tersebut, apakah multiplicative atau additive? Lakukanlah forecasting dan lihatlah model evaluationnya. Apakah model yang menggunakan transformasi log lebih baik dari model yang tanpa melakukan transformasi log?
+
+5. Splitting train test, untuk data train 12 tahun, data test 2 tahun
+```{r}
+# test
+birth_test <- tail(birth_ts, 12*2)
+# train
+birth_train <- head(birth_ts, length(birth_ts)-length(birth_test))
+```
+
+❓  Cek visualisasi dari data train menggunakan `autoplot()` dan coba analisa apakah tipe time series yang tepat? Additive atau multiplicative? Mengapa?
+
+```{r}
+birth_train %>% autoplot()
+```
+
+Additive karena semakin bertambahnya periode data, besaran dari pola seasonal selalu konstan
+
+6. Modelkan dengan metode yang tepat yang sudah dipelajari
+
+❓  Model apakah yang cocok digunakan? Mengapa?
+
+Model yang bisa digunakan yaitu Holt Winters dikarenakan data birth memiliki 3 komponen time series yaitu error, trend, dan seasonal
+```{r}
+# cara 1
+model_birth <- HoltWinters(birth_train, seasonal = "additive")
+# cara 2
+model_birth_ets <- ets(birth_train, model = "ZZZ")
+```
+
+7. Lakukanlah forecasting untuk 2 tahun kedepan (24 bulan)
+```{r}
+birth_fc <- forecast(model_birth, h = 24)
+```
+
+8. Visualisasikan data train, test dan hasil forecastnya
+```{r}
+birth_train %>% 
+  autoplot() +
+  autolayer(birth_test, series = "test")+
+  autolayer(birth_fc$mean, series = "forecast")
+```
+
+9. Model Evaluation
+
+```{r}
+accuracy(birth_fc, birth_test)
+```
+
+❓  Apakah hasil forecasting overfit?
+
+Tidak karena perbedaannya kurang lebih hanya 2%.
+
+10. Kesimpulan
+
+Ketika sebuah data memiliki komponen trend, seasonal, dan error kita bisa menggunakan metode Holt Winters untuk melakukan forecasting. Dari model Holt Winters kita bisa melakukan tunning model pada parameter `alpha`, `beta`, dan `gamma` untuk mendapatkan kombinasi model yang memiliki error lebih kecil lagi.
+
+
