@@ -1,0 +1,608 @@
+---
+title: 'Neural Network : In-class materials'
+author: "David"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    highlight: tango
+    theme: cosmo
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+  word_document:
+    toc: yes  
+    toc_depth: '3'
+---
+
+
+```{r setup, include=FALSE}
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+```
+
+# Deep Learning with Keras
+
+Ada banyak frameworks (template) yang bisa kita gunakan untuk membangun neural network/deep learning model:
+
+* Tensor Flow
+* [Keras](https://keras.rstudio.com/)
+* Pytorch
+* Caffe
+* Theano, etc.
+
+Untuk selanjutnya, kita akan menggunakan `Keras` dalam membuat arsitektur dan melakukan training model. `Keras` adalah package yang membantu kita mengimplementasikan model Deep Learning dengan cepat. `Keras` memanfaatkan `tensorflow`, sebuah tools open source yang dikembangkan oleh Google untuk implementasi Deep Learning.
+
+## MNIST Data Analysis
+
+Mari lakukan **image classification** menggunakan deep learning dengan framework `keras`. Kita akan gunakan data MNIST yang berisi data image tentang tulisan tangan untuk beragam angka. Kita akan coba klasifikasikan setiap tulisan tangan ke label angka yang sesuai.
+
+Workflow klasifikasi:
+
+1. Business Question
+2. Read Data
+3. EDA
+4. Cross-Validation
+5. Data Pre-processing
+6. Model Building
+7. Predict
+8. Evaluation
+
+Sebelumnya mari load library `keras` yang akan kita gunakan:
+
+```{r, warning=FALSE, message=FALSE}
+library(keras)
+library(dplyr)
+```
+
+### Read Data
+
+Data MNIST ada pada folder `data_input/mnist`:
+
+* train.csv -> utk cross validation (train-test)
+* test.csv -> utk data validation
+
+```{r}
+# read mnist train
+mnist <- read.csv("data_input/mnist/train.csv")
+head(mnist)
+```
+
+```{r}
+# mnist_test <- read.csv("data_input/mnist/test.csv")
+# head(mnist_test)
+```
+
+
+### Exploratory Data
+
+1. Cek dimensi data:
+
+```{r}
+dim(mnist)
+```
+
+2. Inspect 6 data awal
+```{r}
+head(mnist)
+```
+
+
+
+Dari data diatas jawab beberapa pertanyaan dibawah ini
+1. Berapa banyak category yang ada pada kelas target? dan bagaimana proporsinya?
+
+```{r}
+mnist$label %>% 
+  table() %>% 
+  prop.table()
+```
+terdapat 10 kategori pada kelas target dengan proporsi yang seimbang. 
+
+2. Berapa banyak prediktor yang ada?
+
+```{r}
+ncol(mnist) - 1 # dikurangi 1 yaitu label
+```
+
+3. Berapa range nilai dari prediktor yang digunakan?
+
+ 0 sampe 1
+0 sampai 255
+```{r}
+mnist %>% 
+  select(-label) %>% 
+  range()
+```
+4. Bila 1 baris data merepresentasikan 1 gambar dengan bentuk persegi (sisi*sisi) maka berapa ukuran gambar tesebut?
+
+```{r}
+sqrt(784)
+```
+28 * 28 pixel
+
+
+0 - 255 : semakin besar nilai pixel maka semakin putih warnanya (grayscale)
+
+1 pixel = 1 byte = 8 bit = 1/0
+
+0 1 0 1 1 0 1 
+- - - - - - - - 
+
+r g b
+
+5. Apa yang anda ketahui terkait pixel?
+- resolusi gambar
+- bagian terkecil dari suatu gambar
+
+6. Visualisasi image
+
+```{r}
+vizTrain <- function(input) {
+    
+    dimmax <- sqrt(ncol(mnist[, -1]))
+    
+    dimn <- ceiling(sqrt(nrow(input)))
+    par(mfrow = c(dimn, dimn), mar = c(0.1, 0.1, 0.1, 
+        0.1))
+    
+    for (i in 1:nrow(input)) {
+        m1 <- matrix(input[i, 2:ncol(input)], nrow = dimmax, 
+            byrow = T)
+        m1 <- apply(m1, 2, as.numeric)
+        m1 <- t(apply(m1, 2, rev))
+        
+        image(1:dimmax, 1:dimmax, m1, col = grey.colors(255), 
+            xaxt = "n", yaxt = "n")
+        text(2, 20, col = "white", cex = 1.2, mnist[i, 
+            1])
+    }
+    
+}
+
+# visualisasi
+vizTrain(mnist[1:25, ])
+```
+
+
+
+### Cross Validation
+
+lakukan cross validation menggunakan initial_split dengan proporsi 80% data untuk data training
+```{r}
+library(rsample)
+set.seed(100)
+mnist_split <- initial_split(data = mnist, prop = 0.8, strata = "label")
+mnist_train <- training(mnist_split)
+mnist_test <- testing(mnist_split)
+```
+
+### Data pre-processing
+
+Sebelum membuat model dengan `Keras`, ada beberapa hal yang perlu dilakukan untuk mempersiapkan data:
+
+1. Memisahkan prediktor dengan target variabel
+2. Mengubah format data menjadi array. Dari data.frame -> matrix -> array
+3. Melakukan one-hot encoding apabila target variabel adalah kategori
+4. Scalling data 
+
+#### Pisahkan target-prediktor, ubah data menjadi matrix serta melakukan scalling
+
+Scalling dengan membagi data dengan angka 255 agar range data yang dimiliki menjadi 0 hingga 1.
+
+scalling : mempercepat komputasi
+
+
+```{r}
+# ambil prediktor dan lakukan scaling
+#prediktor
+train_x <- mnist_train %>% 
+  select(-label) %>% 
+  as.matrix()/255
+
+test_x <- mnist_test %>% 
+  select(-label) %>% 
+  as.matrix()/255
+
+#target
+train_y <- mnist_train %>% 
+  select(label)
+
+test_y <- mnist_test %>% 
+  select(label)
+```
+
+#### Processing prediktor: Mengubah matrix menjadi array
+
+Framework keras menerima data dalam bentuk *array*. Sehingga data prediktor dalam bentuk matrix perlu diubah ke dalam bentuk array menggunakan `array_reshape()`.
+
+
+keras : mengenal tipe data yang ada di python (array)
+
+```{r}
+# prediktor
+train_x_keras <- train_x %>% 
+  array_reshape(dim = dim(train_x))
+
+test_x_keras <- test_x %>% 
+  array_reshape(dim = dim(test_x))
+```
+
+#### Processing target: One Hot Encoding
+
+Ubah target (data kategorik) menjadi variable one hot encoding menggunakan fungsi `to_categorical()`:
+
+- dummy variable   : intercept 
+- one hot encoding : tidak ada intercept
+
+
+
+```{r}
+train_y_keras <- train_y %>% 
+  as.matrix() %>% 
+  to_categorical()
+
+tail(train_y_keras)
+```
+
+### Model Building
+
+Tutorial dari framework `Keras`: 
+
+* [Keras Cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/main/keras.pdf)
+* [Keras Tutorial/Documentation](https://keras.rstudio.com/articles/learn.html)
+
+Tahapan pembuatan model neural network/deep learning di Keras:
+
+1. **Define Architecture**
+2. **Compile** with training parameters
+3. **Fitting** (training) Model
+4. **Evaluate**
+5. **Predict**
+
+#### Define Architecture
+
+Pada tahap ini kita membangun arsitektur model, termasuk mendefinisikan **layers & nodes** serta **activation function** di dalamnya.
+
+```{r}
+# keras initialization
+model <- keras_model_sequential()
+```
+
+Note: 
+- `keras_model_sequential()` adalah inisialisasi awal pembuatan model
+- ketika ingin mengubah sedikit saja parameter dari model, maka harus di run ulang dari `keras_model_sequential()`
+
+Keras model sequential membangun arsitektur model **layer by layer**. Berikut beberapa argumen yang dapat digunakan:
+
+* `layer_dense`: membuat layer yang **fully connected** (saling terhubung) untuk input, hidden, hingga output layer.
+* `input_shape`: mendefinisikan jumlah nodes dalam input layer; pada layer_dense pertama saja
+* `units`: mendefinisikan jumlah nodes dalam layer tersebut
+* `activation`: mendefinisikan activation function yang digunakan
+* `name`: untuk penamaan layer (demi kemudahan visualisasi/summary) 
+
+128, 64,16,10
+
+jumlah nodes pada input layer: 
+
+2^n
+
+```{r}
+2^6
+```
+64, 32, 16
+
+```{r}
+tensorflow::tf$random$set_seed(123)
+ 
+# define
+# tidak perlu asign ulang model ke object lain
+
+model %>% 
+  layer_dense(input_shape = 784, 
+              units = 64, 
+              activation = "relu",
+              name = "hidden1") %>% 
+  layer_dense(units = 32, 
+              activation = "relu", 
+              name = "hidden2") %>% 
+  layer_dense(units = 16, 
+              activation = "relu", 
+              name = "hidden3") %>% 
+  layer_dense(units = 10, 
+              activation = "softmax",
+              name = "output")
+
+summary(model)
+
+```
+
+
+param : jumlah bobot + bias
+
+#### Compile a Model
+
+Pada tahap ini kita menggabungkan arsitektur yang sudah dibuat dengan parameter penting lain untuk menghasilkan model yang utuh, menggunakan fungsi `compile()`: 
+
+* `loss`: **cost function**/error yang digunakan:
+  + klasifikasi multiclass: `categorical_crossentropy`
+  + klasifikasi biner: `binary_crossentropy`. 
+  + regresi: `mean_square_error`
+  
+* `optimizer`: metode back propagation
+  + `optimizer_sgd`
+  + `optimizer_adam`
+* `metric`: metrics model performance yang digunakan; untuk klasifiksi multi-class menggunakan `accuracy`
+
+
+```{r}
+# compile model
+ model %>% 
+  compile(loss = "categorical_crossentropy",
+          optimizer = optimizer_adam(learning_rate = 0.001), 
+          metric = "accuracy")
+```
+
+### Fit (Training Model)
+
+Setelah membuat model, kita harus training model menggunakan data_train. Kita dapat menggunakan fungsi `fit()` dengan parameter:
+
+* variabel prediktor train
+* variabel target train
+* `batch_size`: jumlah data per batch yang digunakan untuk training model
+* `epoch`: 1 kali proses training model menggunakan keseluruhan data
+
+**NOTE**: 
+
+Terminologi pada neuralnet yang kita pelajari sebelumnya & keras agak berbeda. Pada keras, model yang dibuat hanya 1 buah, namun proses trainingnya dapat dilakukan beberapa kali. Pada tiap proses training, dilakukan pembagian data ke beberapa **batch** melalui random sampling. Model akan ditraining menggunakan data pada batch 1 terlebih dahulu, kemudian batch selanjutnya, hingga digunakan seluruh data (1 **epoch**). 
+
+Model dapat ditraining lebih dari 1 epoch (berarti melakukan pembagian batch dengan random sampling yang berbeda dari sebelumnya). Pada tiap epoch, error dan accuracy (metrics) model dapat di track. Bila ditinjau, semakin bertambah epoch, model akan memiliki error semakin kecil dan accuracy yang semakin tinggi.
+
+Hal yang perlu di HIGHLIGHT:
+
+* **Semakin banyak batch** maka proses **training semakin lama** (karena proses optimasi model semakin banyak); namun bisa **mencegah komputasi terlalu besar** di 1 waktu sekaligus.
+* **Semakin banyak epoch** maka **error bisa lebih kecil**, namun proses **training semakin lama** dan rentan **overfitting**. 
+  + dapat ditentukan epoch yang tidak terlalu tinggi dahulu: 10 atau 15
+  + perubahan error tiap epoch dapat dilihat melalui plot; di cut pada perubahan accuracy (metrics) yang sudah landai.
+
+33598
+batch = 100
+
+100 (1)
+100 (2)
+100 (3)
+.
+.
+.   (336)
+
+```{r}
+336*15
+```
+
+step di neural net = jumlah data/batch
+15 epoch
+
+```{r}
+# fitting a model 
+# JANGAN RUN 2X! Karena akan melanjutkan proses training. Bila ingin run lagi, ulang dari `keras_model_sequential()`
+
+history <- model %>% 
+           fit(train_x_keras,# predictor 
+               train_y_keras,# target
+               epoch = 15,
+               batch= 100)
+```
+
+Plotting Model:
+
+```{r}
+plot(history)
+```
+
+## Predict
+
+Melakukan prediksi pada data test `test_x_keras` dengan menggunakan fungsi `predict_classes`
+
+```{r}
+# melakuan prediksi
+predict_class <- predict_classes(model, test_x_keras)
+# melihat hasil prediksi
+predict_class %>% 
+  head()
+```
+
+## Evaluation
+Evaluasi kebaikan model dalam memprediksi menggunakan `confusionMatrix()`:
+
+```{r}
+library(caret)
+confusionMatrix(data = as.factor(predict_class), reference = as.factor(test_y$label))
+```
+
+
+**NOTE**: Bila hasil metrics masih ingin ditingkatkan, kita dapat melakukan model tuning kembali pada pembuatan model nn maupun tahap pre-processing lainnya.
+
+## Save & Load Model
+
+```{r eval=FALSE}
+# save
+model %>% 
+  save_model_hdf5("model_nn.hdf5")
+```
+
+```{r}
+model_loaded <- load_model_hdf5(filepath = "model_nn.hdf5")
+```
+
+
+```{r}
+# cek model
+# summary(model_loaded)
+summary(model_loaded)
+
+```
+
+# Dive Deeper
+
+1. Buat model deep learning baru menggunakan data train yang sama dan simpan ke dalam objek `model_nama-anda`. 
+
+* Buat arsitektur arsitektur model dengan:
+  - input layer: jumlah node: ncol(train_x_keras) = 784
+  - hidden layer 1: jumlah node 256; activation function ReLu
+  - hidden layer 2: jumlah node 128; activation function ReLu
+  - hidden layer 3: jumlah node 64; activation function ReLu
+  - output layer: jumlah node 10; activation function softmax
+* Compile dengan training parameter:
+  - loss (cost function) : categorical_crossentropy
+  - optimizer adam; learning rate = 0.001
+  - metric = accuracy
+* Fitting:
+  - gunakan epoch & batch size yang sama dengan model sebelumnya.
+
+```{r}
+# build architecture
+
+
+```
+
+```{r}
+# compile model
+
+
+```
+
+```{r}
+# fit (training) model 
+
+```
+
+```{r, eval = F}
+# plot history model
+
+
+```
+
+2. Lakukan prediksi ke data test:
+
+```{r}
+# melakuan prediksi
+
+
+# melihat hasil prediksi
+
+
+```
+
+```{r}
+# confusion matrix
+
+
+```
+
+3. Apakah terjadi overfitting? Untuk mengetahuinya, bandingkan accuracy yang didapatkan pada plot history dan yang didapatkan confusion matrix!
+
+
+# Summary 
+
+**Data Pre-processing untuk Keras**
+
+* Data dalam bentuk `data.frame` diubah terlebih dahulu menjadi `array` karena keras menerima input dalam bentuk array. Tahapan: data.frame -> matrix -> array.
+* Pengubahan data dalam bentuk matrix ke array:
+  + data prediktor diubah menggunakan fungsi `array_reshape()`
+  + data target (label) diubah menggunakan fungsi `to_categorical()`
+
+**Tahapan Model Building di Keras:**
+
+1. Define Model Architecture:
+  * layers & node
+  * activation function
+2. Compile a Model:
+  * optimizer (metode back propagation)
+  * cost/loss function
+  * metrics
+3. Fit (train model):
+  * batch size
+  * epochs
+4. Predict
+5. Evaluate
+
+**Panduan Model Building & Tuning:**
+
+* Nodes pada input layer: sejumlah prediktor yang kita miliki.
+* Nodes pada output layer: 
+  + regresi = 1
+  + klasifikasi = sejumlah kelas variable target
+* Hidden layer: 
+  + jumlah hidden layer (how deep): 
+    - model lebih kompleks
+    - waktu training lebih lama
+    - percobaan pertama bisa buat 2 layer dulu
+  + jumlah node pada hidden layer (how wide): 
+    - terlalu banyak bisa menghasilkan overfitting.
+    - bisa pakai angka kelipatan 2^n (2,4,8,16,32,64,128, dst..), kisaran 2/3 jumlah prediktor
+    - jumlah mengerucut semakin ke output layer 
+* Cost function:
+  + regresi: sum of squared error (sse)
+  + klasifikasi: cross-entropy (ce)
+* Activation function:
+  + output layer:
+    - linear: regresi
+    - logistic: klasifikasi biner
+    - softmax: klasifikasi multiclass
+  + hidden layer:
+    - ReLu: data image
+    - tanh: data yang nilai prediktornya banyak yang negatif
+* Metode back propagation (optimizer): 
+  + gradient descent (gunakan `optimizer_sgd()` di Keras)
+  + adam (gunakan `optimizer_adam()`)
+* Learning rate; umumnya 0.001
+* Batch yang banyak (batch_size = kecil) mencegah komputasi terlalu besar dalam 1 waktu
+* Epoch yang semakin banyak maka:
+  + proses training semakin lama
+  + error bisa lebih kecil
+  + terlalu banyak akan rentan overfitting 
+  + dapat ditentukan epoch yang tidak terlalu tinggi dahulu: 10 atau 15
+  + perubahan error tiap epoch dapat dilihat melalui plot; di cut pada perubahan accuracy (metrics) yang sudah landai.
+
+
+
+# Additional Link & References
+
+1. ["A (Quick) Guide to Neural Network Optimizers with Applications in Keras", Andre Ye, March 2020](https://towardsdatascience.com/a-quick-guide-to-neural-network-optimizers-with-applications-in-keras-e4635dd1cca4)
+2. ["Various Optimization Algorithms For Training Neural Network", Sanket Doshi, Jan 2019](https://towardsdatascience.com/optimizers-for-training-neural-network-59450d71caf6#:~:text=Optimizers%20are%20algorithms%20or%20methods,order%20to%20reduce%20the%20losses.&text=Optimization%20algorithms%20or%20strategies%20are,the%20most%20accurate%20results%20possible.)
+3. [Deep Learning Tips and Tricks cheatsheet, By Afshine Amidi and Shervine Amidi, Stanford Edu](https://stanford.edu/~shervine/teaching/cs-230/cheatsheet-deep-learning-tips-and-tricks)
+4. [Various cases on Deep Learning at algotech.netlify.app](https://algotech.netlify.app/tags/deep-learning/)
+5. [Visual Explanation of Neural Network by 3Blue1Brown](https://www.youtube.com/watch?v=aircAruvnKk&t=850s)
+6. [The Age of AI, YouTube Originals](https://www.youtube.com/watch?v=UwsrzCVZAb8&t=111s): This is specially good for you who want to know how far the innovation of AI have been and more later in the future, shape our way of living.
+
+
+
+```{r}
+# kalau misalkan kita punya 3 csv r g b, gimana cara menggabungkannya?
+mnist_green <- head(mnist,10)
+mnist_blue <- head(mnist,10)
+mnist_red <- head(mnist,10)
+
+mnist_red %>% 
+  left_join(mnist_blue, by = c("label" = "label")) %>% 
+  left_join(mnist_green, by = c("label" = "label")) 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

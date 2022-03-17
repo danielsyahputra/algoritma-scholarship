@@ -1,0 +1,1067 @@
+---
+title: 'Neural Network : In-class materials'
+author: "David"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    highlight: tango
+    theme: cosmo
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+  word_document:
+    toc: yes
+    toc_depth: '3'
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{=html}
+<style>
+body {
+text-align: justify}
+</style>
+```
+```{r setup, include=FALSE}
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+
+options(scipen = 99)
+
+# load library
+library(neuralnet)
+library(tidyverse)
+library(caret)
+```
+
+# Training Objective
+
+```{r, echo=FALSE}
+knitr::include_graphics("assets/Neural Network.png")
+```
+
+# Neural Network and Deep Learning
+
+Welcome to the last stage of Machine Learning Specialization, **Neural
+Network & Deep learning**! Topik ini erat kaitannya dengan teknologi
+mutakhir yang menjadi sorotan dunia saat ini yaitu **Artifical
+Intellegence**. Topik ini akan membuka gerbang ke perjalanan yang lebih
+menarik sekaligus menantang di ranah [Artificial
+Intellegence](https://www.youtube.com/watch?v=5IvQ3fYKnfM).
+
+## Deep Learning
+
+```{r, out.width = "100%", echo = FALSE, fig.align = "center"}
+knitr::include_graphics("assets/ai-diagram.png")
+```
+
+Deep learning merupakan bagian dari machine learning. Deep learning
+dirancang untuk menganalisa data dengan struktur logika yang mirip
+dengan bagaimana manusia mengambil keputusan, terutama untuk data yang
+tidak terstuktur dan umumnya hanya baik dianalisis oleh manusia. Untuk
+dapat mencapai kemampuan tersebut, deep learning berasal dan
+dikembangkan dari metode **Neural Network**.
+
+## Neural Network
+
+**Neural network** atau artificial neural network (ANN) adalah metode
+machine learning yang *terinspirasi dari cara kerja otak manusia*. Otak
+bekerja dengan suatu sistem saraf (biological neural network). Terdapat
+2 hal utama dari sistem saraf manusia yang diadopsi oleh neural network:
+**arsitektur** & **proses belajar** yang dilakukan.
+
+### Arsitektur Neural Network
+
+Sistem saraf yang dimiliki manusia terdiri dari sel saraf yang dinamakan
+**neuron**, dan neuron tersebut amat banyak hingga membentuk
+**jaringan**. Tiap stimulus/input dari luar akan diterima oleh panca
+indra sebagai signal kemudian akan dialirkan melalui sel saraf satu ke
+sel saraf lainnya. Jaringan sel saraf tersebar dari ujung jari hingga
+otak dan berlanjut kembali ke seluruh tubuh kita.
+
+> Jaringan sel saraf terus mengalirkan informasi dari
+> stimulus/**input**, diproses melalui otak, hingga diekspresikan
+> melalui reaksi/aktivitas tubuh sebagai **output** atau respon yang
+> kita berikan.
+
+```{r, echo=FALSE}
+knitr::include_graphics("assets/bnn.png")
+```
+
+Arsitektur sistem saraf inilah yang menginspirasi terbentuknya model
+neural network.
+
+```{r, echo = FALSE}
+knitr::include_graphics("assets/animation.gif")
+```
+
+Pada model neural network, informasi dialirkan dan diproses melalui
+arsitektur yang terdiri dari:
+
+-   Input Layer: Layer pertama dalam arsitektur NN. Jumlah Neuron-nya
+    tergantung pada jumlah variabel X di data kita.
+
+-   Hidden Layer: Layer antara input layer dan output layer. Jumlahnya
+    dapat lebih dari 1 layer, yang menentukan adalah user.
+
+-   Output Layer: Layer terakhir dalam arsitektur NN. Jumlah neuronnya
+    tergantung dengan banyak variabel y kita.
+
+### Belajar dari Kesalahan (error)
+
+Cara belajar neural network dibuat menyerupai manusia. Cara belajar
+manusia, adalah melalui kesalahan.
+
+> Manusia tidak serta merta terlahir pintar. Selama manusia hidup,
+> selama itu pula [sistem saraf kita
+> berkembang](https://www.youtube.com/watch?v=VNNsN9IJkws), selama itu
+> pula manusia belajar.
+
+Seluruh refleks dalam tubuh kita tidak terjadi begitu saja, namun
+melalui proses latihan. Melalui banyak kesalahan dan pengulangan, tubuh
+kita belajar dan membangun sistem saraf yang "pintar". Sistem tersebut
+mengerti **sel-sel saraf mana saja yang perlu aktif/inaktif dalam
+mengalirkan stimulus**. Sel saraf yang aktif memiliki bobot atau peran
+yang tinggi untuk menentukan output, sementara sel yang inaktif dianggap
+tidak penting atau mengganggu proses pengolahan informasi sehingga lebih
+diabaikan. Hal ini membuat output atau respon yang tubuh kita berikan
+tepat dan cepat. Konsep **pembobotan** ini diadaptasikan pada neural
+network.
+
+Untuk lebih memahaminya, mari buat model neural network untuk kasus
+regresi dari dummy data di bawah ini. Untuk kemudahan visualisasi kita
+akan menggunakan package `neuralnet`.
+
+```{r echo=FALSE}
+y <- c(0,1,1,0)
+dat <- data.frame(expand.grid(c(0,1), c(0,1), c(1,2)), y)
+
+set.seed(100)
+dat <- dat %>%
+  mutate(y = runif(nrow(dat), 3, 4) + sum(dat[1:2, ]) + dat$Var3^2)
+
+head(dat)
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+library(neuralnet)
+# modelling nn
+set.seed(100)
+
+model1 <- neuralnet(formula = y ~ .,
+                    data = dat,
+                    hidden = 4,
+                    linear.output = T, # kasus regresi 
+                    rep = 5)
+
+plot(model1, rep = "best") # best = model dengan error terkecil
+```
+
+**Proses training model:**
+
+1.  Neural network memberikan **pembobotan awal secara random** untuk
+    tiap node
+
+2.  Aliran informasi terjadi untuk melakukan prediksi dari input ->
+    hidden -> output layer (**feed forward**).
+
+3.  Didapatkan **error (cost function)** hasil prediksi.
+
+4.  Model "belajar dari kesalahan" dengan menyalurkan kembali informasi
+    error ke node-node sebelumnya (**back propagation**) sehingga bobot
+    dapat diperbaiki (**update bobot**). Satu rangkaian proses update
+    bobot (1 feed forward & 1 back propagation) disebut sebagai
+    **step/epoch**.
+
+5.  Model terus mengupdate bobotnya hingga didapatkan error terkecil.
+    Pada contoh di atas, dibutuhkan 283 step/epoch untuk mendapatkan
+    error terkecil 0.001066.
+
+**Glossary Arsitektur Neural Network**
+
+-   *weight*: informasi yang dibawa oleh setiap neuron, sama seperti
+    slope pada regresi. Awalnya bobot ini akan di inisialisasi secara
+    random.
+
+-   *bias*: sama seperti intercept pada regresi.Awalnya bias akan di
+    inisialisasi secara random
+
+-   *Activation function* : fungsi untuk standarisasi hasil perhitungan
+
+-   *Forward propagation*: proses membawa data input melewati tiap
+    neuron pada hidden layer sampai pada output layer yang nantinya akan
+    dihitung errornya
+
+-   *Backpropogation*: proses membawa error yang didapat dari forward
+    propagation untuk mengupdate setiap weight dan bias.
+
+-   *Cost function*: Error. Selisih antara hasil prediksi dan data
+    aktual. cross entropy (ce) untuk klasifikasi dan sse untuk regresi.
+
+-   *Epoch*: Banyaknya proses iterasi (1x forward dan 1x backward = 1
+    epoch) dalam training model.
+
+### Highlight on Hidden Layer
+
+**Hidden layer** adalah komponen penting dalam arsitektur neural network
+maupun deep learning. Untuk lebih memahaminya, mari buat suatu model
+neural network tanpa hidden layer menggunakan data `dat` yang kita
+gunakan untuk kasus regresi sebelumnya. Buat model dengan nama
+`model_reg`, tanpa hidden layer, dengan 5 kali percobaan (rep), kemudian
+plotkan model tersebut:
+
+```{r}
+# modelling
+set.seed(100)
+model_reg <-  neuralnet(formula = y ~ .,
+                    data = dat,
+                    hidden = 0,
+                    linear.output = T)
+plot(model_reg)
+```
+
+Coba bandingkan dengan model regresi linear:
+
+```{r}
+# model regresi linear
+lm_reg <- lm(formula = y~. , data = dat)
+  
+summary(lm_reg)
+```
+
+Coba lihat hasil prediksinya:
+
+```{r}
+# predict ke data train
+lm_pred <- predict(lm_reg,newdata = dat)
+
+# fungsi SSE (error yang digunakan pada nn/deep learning regresi)
+sse <- function(pred, act) {
+    return(sum((pred - act)^2)/2)
+}
+
+# kalkulasi sse
+sse(pred = lm_pred,act = dat$y)
+```
+
+Ternyata model neural network tanpa hidden layer amat mirip dan
+sesederhana model regresi linear! Begitu pula untuk kasus klasifikasi,
+akan sama saja sederhananya dengan model regresi logistik.
+
+Keberadaan hidden layer merupakan keunggulan yang dimiliki neural
+network/deep learning. Hidden layer membuat model mampu menangkap
+**informasi/pola abstrak** yang sulit ditangkap oleh model machine
+learning sederhana (automatic feature extraction). Keunggulan tersebut
+membuatnya menjadi robust.
+
+## Dive Deeper 1
+
+```{r}
+plot(model1, rep = "best")
+```
+
+1.  Tinjau model neural network di atas:
+
+<!-- -->
+
+a.  model terdiri dari tipe layer apa saja, dan berapa jumlah layer
+    untuk masing-masing tipe?
+
+Input, hidden, dan output. Masing-masing tipe memiliki 1 layer.
+
+b.  berapa jumlah node pada hidden layer? 4 node
+
+<!-- -->
+
+2.  Mengapa digunakan `set.seed` saat membuat model neural network?
+
+Karena pada step pertama bobot di inisiasi secara acak. set.seed
+berfungsi untuk mengunci acakan tersebut, sehingga tiap kali pemodelan
+dilakukan/dijalankan hasilnya tidak berubah2.
+
+3.  Apabila ditambahkan variabel prediktor numeric baru sejumlah 2,
+    perbedaan apa yang dimiliki model baru dibandingkan model di atas?
+
+yang berubah adalah jumlah node pada input layer. jumlah node pada input
+layer menjadi 5 node (mengikuti banyaknya predictor)
+
+4.  Kapan neural network digunakan?
+
+-   Saat data input yang dimiliki bersifat unstructured
+
+## Deep Learning
+
+Kita telah mengetahui tentang neural network. Namun apa hubungannya
+dengan Deep Learning? **Deep learning** ternyata hanyalah suatu neural
+network yang memiliki jumlah hidden layer yang lebih dari satu. Untuk
+membuatnya, kita dapat mengubah nilai pada parameter `hidden`:
+
+```{r}
+#modelling
+set.seed(100)
+model_dl <-  neuralnet(formula = y ~ ., 
+                       data = dat, 
+                       hidden = c(4,8),
+                       rep = 5, 
+                       linear.output = T)
+plot(model_dl, rep = "best")
+```
+
+Dengan menambahkan jumlah hidden layer di model neural network awal
+kita, kita telah mengubahnya menjadi model deep learning!
+
+## Model deep learning
+
+Buat model neural network `model_dl2` yang memiliki hidden layer
+sebanyak 3 layer dengan masing masing layer terdiri dari 8, 6, dan 4
+neuron menggunakan data `dat`. Seperti sebelumnya, ingin dilakukan 5
+kali percobaan pembuatan model.
+
+```{r}
+# buat model
+set.seed(100)
+model_dl2 <- neuralnet(formula = y ~ .,
+                       data = dat,
+                       hidden = c(8,6,4),
+                       rep = 5,
+                       linear.output = T)
+
+# plot model
+plot(model_dl2, rep = "best")
+```
+
+Bandingkan antara ketiga model yang telah kita buat (`model_nn`,
+`model_dl`, dan `model_dl2`), model mana yang memiliki performa paling
+baik?
+
+-   `model1`: 0.001066 4
+-   `model_dl`: 0.000437 c(4,8)
+-   `model_dl2`:0.000549 c(8,6,4)
+
+**Note:** Faktanya, semakin banyak **hidden layer** dan jumlah node yang
+digunakan tidak menjamin hasil prediksi yang lebih baik (model_nn vs.
+model_dl). Pengaturan jumlah hidden layer serta jumlah node yang ada di
+dalamnya adalah beberapa hal yang dapat kita tuning untuk menghasilkan
+model terbaik.
+
+## Prediksi model `neuralnet`
+
+Untuk memprediksi data menggunakan package `neuralnet`, bisa digunakan
+fungsi `compute()` dengan parameter:
+
+-   x = model NN\
+-   covariate = variable prediktor data yang ingin diprediksi
+-   rep = repetisi ke berapa yang ingin digunakan (diinginkan rep =
+    "best")
+
+```{r}
+# cari model terbaik
+which.min(model_dl$result.matrix[1,]) # untuk mencari model ke berapa yang memiliki error paling kecil
+
+```
+
+```{r}
+# model_dl$result.matrix
+```
+
+gunakan fungsi `compute()`
+
+```{r}
+# prediksi
+dl_pred <-  neuralnet::compute(x = model_dl, covariate = dat, rep = 2)
+dl_pred$net.result #hasil prediksi
+```
+
+```{r}
+# dl_pred
+```
+
+```{r}
+# melihat error tiap data/observasi
+data.frame(actual = dat$y, 
+           predict = dl_pred$net.result) %>% 
+  mutate(error = actual - predict)
+```
+
+```{r}
+# kalkulasi error (sse)
+sse(pred = dl_pred$net.result,act = dat$y)
+```
+
+```{r}
+plot(model_dl, rep = "best")
+```
+
+## Regresi vs Klasifikasi
+
+Pembuatan model yang kita demonstrasikan sebelumnya adalah untuk kasus
+regresi. Terdapat beberapa perbedaan ketika kita membangun neural
+network/deep learning untuk kasus regresi dan klasifikasi:
+
+### Cost Function (error)
+
+Cost function adalah nilai acuan kebaikan model; nilai untuk
+mengevaluasi kebaikan model; dapat juga dianalogikan sebagai error.
+Model dapat "belajar" dengan mengetahui cost function yang harus ia
+gunakan untuk mengevaluasi dirinya sendiri. Cost function yang digunakan
+berbeda untuk tiap kasus:
+
+-   regresi:
+
+    -   sum of squared error(sse)
+    -   setting parameter: `neuralnet(..., err.fct="sse")`
+
+$$SSE = \frac{1}{2} {\Sigma (y - \hat y)^2}$$
+
+-   klasifikasi:
+
+    -   cross-entropy error (ce)
+    -   setting parameter: `neuralnet(..., err.fct="ce")`
+
+$$Binary\ Cross-Entropy = -p(x)\ log\ q(x) + (1-p(x))\ log\ (1-q(x))$$
+##\# Activation Function
+
+Activation function ada pada setiap node setelah input layer dan
+berfungsi untuk **mentrasformasi nilai/informasi pada node (scaling
+data)** sebelum diteruskan ke node selanjutnya. Hal ini bermanfaat agar:
+
+-   nilai yang diteruskan sudah dalam bentuk sepatutnya (misal output
+    klasifikasi berupa peluang: 0\~1
+-   menjaga agar nilai yang diteruskan ke node-node selanjutnya tidak
+    semakin besar dan memperberat komputasi.
+
+Contoh activation function yang sering digunakan untuk kasus regresi &
+klasifikasi:
+
+-   **Linear**
+
+    -   cocok di output layer dan untuk kasus regresi (range: -inf \~
+        inf)
+    -   setting parameter: `linear.output = T` (default)
+
+-   **Sigmoid/logistic**
+
+    -   cocok di output layer untuk kasus klasifikasi biner (range: 0
+        \~ 1)
+    -   setting parameter: `linear.output = F` & `act.fct = "logistic"`
+
+```{r, fig.height = 3, fig.width=9, echo=F}
+par(mfrow = c(1, 2))
+curve(identity(x), from = -5, to = 5, main = "Linear function")
+curve(plogis, from = -5, to = 5, main = "Logistic Regression")
+```
+
+Contoh activation function lain:
+
+-   Softmax:
+
+    -   cocok di output layer untuk kasus klasifikasi multiclass (range:
+        0 \~ 1)
+    -   softmax akan menghasilkan nilai peluang untuk masing-masing
+        kelas target yang bila dijumlahkan adalah 1. Data baru akan
+        diklasifikasikan ke kelas target yang memiliki peluang paling
+        tinggi.
+
+-   ReLU / Rectified Linear Unit:
+
+    -   cocok di hidden layer untuk kasus data image (range: 0 \~ inf)
+
+-   tanh / Hyperbolic Tangent :
+
+    -   cocok di hidden layer bila nilai prediktor banyak yang negatif
+        (range: -1 \~ 1)
+
+```{r, fig.height = 3, fig.width=9, echo=F}
+par(mfrow = c(1, 3))
+curve(tanh(x), xlim=c(-5, 5), main="Hyperbolic Tangent")
+curve(exp(x) / sum(exp(x)), xlim=c(-5,5), main="Softmax Function")
+curve(ifelse(x >= 0, x, 0), xlim=c(-5, 5), main="Rectified Linear Unit")
+```
+
+## Dive Deeper 2.1
+
+-   Deep learning dan neural network terinspirasi dari cara kerja otak
+    manusia. Model tersebut mengadopsi 2 hal utama yaitu:
+
+    -   Arsitektur
+    -   Cara belajar
+
+-   Kita telah belajar banyak terminologi selama mempelajari arsitektur
+    dan cara kerja deep learning. Coba cocokan terminologi-terminologi
+    di bawah ini!
+
+1.  `neuron/node`: tempat penyimpanan informasi atau nilai
+2.  `input layer`: layer berisi node yang menerima informasi dari
+    variabel prediktor
+3.  `hidden layer`: layer berisi node tempat informasi di proses
+4.  `output layer`: layer berisi node yang mengeluarkan hasil prediksi
+5.  `weight`: bobot tiap node; koefisien yang dikalikan dengan nilai
+    dari variable prediktor
+6.  `bias`: nilai intercept
+7.  `feed forward`: aliran informasi melalui input-hidden-output layer;
+    aliran informasi untuk melakukan prediksi
+8.  `back propagation`: aliran informasi untuk memperbaiki/mengupdate
+    bobot; aliran informasi dari output ke hidden layer
+9.  `cost function`: nilai kebaikan model yang dijadikan bahan evaluasi
+    model; selisih antara nilai aktual dengan prediksi.
+10. `step / epoch`: 1 kali tahapan feed forward dan back propagation
+11. `activation function`: fungsi untuk melakukan scaling atau
+    transformasi nilai pada node, sebelum nilai dilanjutkan ke node
+    berikutnya
+
+<!-- -->
+
+a.  layer berisi node yang menerima informasi dari variabel prediktor
+b.  tempat penyimpanan informasi atau nilai
+c.  layer berisi node yang mengeluarkan hasil prediksi
+d.  aliran informasi melalui input-hidden-output layer; aliran informasi
+    untuk melakukan prediksi
+e.  nilai intercept
+f.  bobot tiap node; koefisien yang dikalikan dengan nilai dari variable
+    prediktor
+g.  layer berisi node tempat informasi di proses
+h.  aliran informasi untuk memperbaiki/mengupdate bobot; aliran
+    informasi dari output ke hidden layer
+i.  fungsi untuk melakukan scaling atau transformasi nilai pada node,
+    sebelum nilai dilanjutkan ke node berikutnya
+j.  1 kali tahapan feed forward dan back propagation
+k.  nilai kebaikan model yang dijadikan bahan evaluasi model; selisih
+    antara nilai aktual dengan prediksi.
+
+-   Keunggulan Neural Network & Deep Learning:
+
+    -   Bagus digunakan pada data yang tidak terstruktur
+    -   Sering digunakan pada data yang besar
+    -   banyak paramter yang bisa di tunning
+
+-   Perbedaan neural network dan deep learning terdapat pada: \[X\]
+
+\[ \] jumlah node pada input layer \[ \] jumlah node pada output layer
+\[ \] jumlah node pada hidden layer \[X\] jumlah hidden layer
+
+-   Parameter yang dibedakan pada neural network/deep learning untuk
+    kasus klasifikasi dan regresi adalah:
+
+    -   cost function:
+
+        1.  regresi = "sse"
+        2.  klassifikasi = "ce"
+
+    -   activation function:
+
+        1.  regresi = linear (-inf \~ inf)
+        2.  klasifikasi = logistic/sigmoid (0, 1) (probability)
+
+### Paremeter di `neuralnet`
+
+1.  `Formula`.
+
+2.  `Data`.
+
+3.  `hidden`: defaultnya adalah 1.
+
+4.  `threshold`: batas minimum error yang harus dicapai. Defaultnya
+    adalah 0,01.
+
+5.  `rep`: jumlah tipe model yang ingin dibuat. Defaultnya adalah 1.
+
+6.  `err.fct`: menentukan jenis cost function yang digunakan. Pada
+    packages `neuralnet` disediakan 2 jenis saja. Yaitu `SSE` (Sum
+    square error), dan `ce` (Cross Entropy). `SSE` digunakan ketika
+    kasus kita regresi. Sedangkan `ce` digunakan ketika kasusnya
+    klasifikasi. Defaultnya adalah `SSE`.
+
+7.  `act.fct`: menentukan jenis activation function yang digunakan. Ada
+    berbagai macam jenisnya: Sigmoid, softmax, ReLU, tanh. Perbedaan
+    masing-masing jenisnya terdapat pada interval nilai yang dihasilkan.
+    Defaultnya adalah Sigmoid/logistic.
+
+8.  `linear.output`: sebuah logical, ketika TRUE maka outputnya akan
+    diteruskan secara linear (regresi). Kalau pilihannya FALSE maka
+    outputnya akan ditransformasikan menggunakn activation function
+    (klasifikasi). Defaultnya linearoutput = TRUE.
+
+## Dive deeper 2.2
+
+Coba buat model deep learning untuk kasus klasifikasi menggunakan data
+berikut:
+
+```{r}
+# dummy data
+set.seed(100)
+y <- c(0, 1, 1, 0)
+dat_cl <- data.frame(expand.grid(c(0, 1), c(0, 1), c(1, 
+    2)), y) %>% 
+  mutate(y = as.factor(y))
+
+head(dat_cl)
+```
+
+Buat model deep learning dengan nama `model_cl` (parameter dibebaskan).
+Gunakan waktu yang dimiliki untuk mencoba tuning model, kemudian plotkan
+model terbaik yang didapatkan.
+
+```{r}
+set.seed(100)
+#buat model
+# ctrl + shift + a : untuk membuat setiap setelah koma jadi enter. 
+model_cl <- 
+neuralnet(
+  formula = y ~ .,
+  data = dat_cl,
+  hidden = c(8, 4, 2),
+  rep = 5,
+  linear.output = F,
+  err.fct = "ce", # cost function
+  act.fct = "logistic" # Activation Function
+)
+#plot model
+plot(model_cl, rep = "best")
+
+```
+
+**BONUS:** Coba lakukan prediksi dan evaluasi menggunakan confusion
+matrix!
+
+```{r}
+# cari rep model terbaik
+which.min(model_cl$result.matrix[1,])
+```
+
+```{r}
+dat_cl$y
+```
+
+```{r}
+# prediksi dengan `compute()`
+dat_cl_pred <- neuralnet::compute(x =  model_cl, covariate = dat_cl, rep = 3)
+dat_cl_pred$net.result
+```
+
+```{r}
+cl_label <- ifelse(dat_cl_pred$net.result[,1] >0.5 ,"0","1" )
+table(cl_label , dat_cl$y)
+```
+
+-- End Day 1 --
+
+## Back Propagation
+
+Back propagation adalah pengaliran informasi error ke node-node
+sebelumnya agar model dapat memperbaiki/optimasi bobot dan bias yang ia
+gunakan untuk menghasilkan prediksi. Proses update dilakukan hingga
+mendapatkan error terkecil. Proses optimasi bobot dan bias tersebut
+dilakukan dengan metode **Gradient Descent**.
+
+Contoh tahapan Gradient Descent untuk suatu bobot:
+
+1.  Memplotkan kurva perubahan cost function (error) terhadap bobot
+2.  Menghitung gradient (kemiringan/garis singgung) dari bobot awal
+    (yang sedang digunakan) dengan mencari turunan parsialnya (kalkulasi
+    kalkulus)
+3.  Mendapatkan nilai gradient dan mengubah bobot berdasarkan rule
+    (lihat gambar):
+
+<!-- -->
+
+a.  nilai positif: bobot perlu ditambah
+b.  nilai negatif: bobot perlu dikurangi
+
+$$W_k = W_{k-1} - \alpha \frac{\partial\ E}{\partial\ W_{k-1}} = W_{k-1} - \alpha \nabla g(W_{k-1})$$
+
+Keterangan:
+
+$W_k$ : Bobot pada iterasi k
+
+$W_{k-1}$ : Bobot pada iterasi k-1
+
+$\alpha$ : Learning rate
+
+$\frac{\partial\ E}{\partial\ W_{k-1}}$ : Partial derivative/turunan
+parsial
+
+$\nabla g(W_{k-1})$ : gradient dari iterasi k-1
+
+4.  Besar penambahan/penurunan bobot adalah
+    `bobot awal - (gradient x learning rate)`. **Learning rate** adalah
+    seberapa cepat model melakukan update bobot (range: 0 \~ 1):
+
+-   learning rate rendah:
+
+    -   penaikan/penurunan bobot akan dilakukan perlahan-lahan
+        (perubahannya kecil)
+    -   waktu untuk mencapai titik *lokal optimum* dari bobot akan lebih
+        lama
+
+-   learning rate tinggi:
+
+    -   penaikan/penurunan bobot akan dilakukan secara cepat
+        (perubahannya besar)
+    -   waktu untuk mencapai titik lokal optimum dari bobot akan lebih
+        cepat
+    -   ada kemungkinan untuk melewati titik local optimum.
+
+    ```{r, echo = FALSE}
+    knitr::include_graphics("assets/learning_rate.jpg")
+    ```
+
+# Case: Bank Campaign
+
+Kita adalah seorang analis dari suatu perusahaan bank. Perusahaan ingin
+menganalisis data **bank telemarketing campaigns** yang dilakukan
+baru-baru ini, dengan tujuan, memprediksi apakah seorang calon pelanggan
+akan setuju mengajukan program deposit atau tidak?
+
+**Sumber data**: [Bank Marketing Dataset, UCI Machine Learning
+Repository](https://archive.ics.uci.edu/ml/datasets/bank+marketing)
+
+**Business Question**: Memprediksi apakah seorang calon pelanggan akan
+setuju mengajukan program deposit atau tidak?
+
+-   Kelas positif: yes
+-   Kelas negatif: no
+
+## Read Data
+
+csv : comma separated value default : comma sep = "pemisahnya_apa" sep =
+";" sep = " "
+
+```{r}
+# read data bank-full pada folder data_input
+bank <- read.csv("data_input/bank-full.csv", sep = ";", stringsAsFactors = T)
+head(bank)
+#inspect
+```
+
+Deskripsi kolom:
+
+-   `age`: umur
+-   `job`: kategori pekerjaan
+-   `marital`: status menikah
+-   `education`: tingkat pendidikan
+-   `default`: apakah memiliki kredit gagal bayar (default)?
+-   `balance`: uang yang tersimpan dalam rekening
+-   `housing`: apakah memiliki kredit rumah?
+-   `loan`: apakah memiliki kredit pribadi?
+-   `contact`: metode kontak/telefon
+-   `day`: day-of-month dari kontak terakhir
+-   `month`: bulan dari kontak terakhir
+-   `duration`: durasi kontak pada campaign ini
+-   `campaign`: jumlah kontak yang dilakukan pada campaign ini
+-   `pdays`: jumlah hari berlalu setelah kontak dari campaign sebelumnya
+-   `previous`: jumlah kontak yang dilakukan pada campaign sebelumnya
+-   `poutcome`: outcome dari campaign sebelumnya
+-   `y`: outcome dari campaign ini (target variable)
+
+## Exploratory Data Analysis
+
+Adakah tipe data yang belum sesuai?
+
+```{r}
+# koreksi tipe data
+# ubah tipe data
+str(bank)
+```
+
+Apakah terdapat missing value? tidak ada missing value pada data
+
+```{r}
+# cek missing value
+bank %>% 
+  anyNA()
+```
+
+Apakah proporsi kelas target seimbang?
+
+```{r}
+# cek class imbalance
+bank$y %>% 
+  table() %>% 
+  prop.table()
+```
+
+## Data Pre-Process
+
+Take out variabel yang tidak dibutuhkan dalam model:
+
+-   `month`: bulan dari kontak terakhir
+-   `day`: day-of-month dari kontak terakhir
+-   `pdays`: jumlah hari berlalu setelah kontak dari campaign
+-   `duration`: durasi kontak pada campaign ini
+-   `contact`: metode kontak/telefon sebelumnya -> distribusi condong ke
+    nilai rendah (tidak variatif)
+
+```{r}
+bank$pdays %>% 
+  summary()
+```
+
+kita tidak menggunakan duration karena nilai ini diketahui setelah user
+menelfon nasabah.
+
+```{r}
+bank$duration %>% 
+  summary()
+```
+
+1 : baris 2: kolom
+
+```{r}
+table(bank$contact, bank$y) %>% 
+  prop.table(margin = 1)
+```
+
+```{r}
+library(inspectdf)
+bank %>% 
+  inspect_cat() %>% 
+  show_plot()
+
+```
+
+```{r}
+bank_clean <- bank %>% 
+  select(-month, -day, -pdays, -duration, -contact)
+head(bank_clean)
+```
+
+Ubah data faktor menjadi variable dummy menggunakan `model.matrix()`.
+Hal ini karena model neural network hanya menerima data numerik.
+
+Berikut adalah ilustrasi ide `model.matrix()`:
+
+```{r}
+# cek level variabel marital
+ levels(bank_clean$marital)
+```
+
+one hot encoding (n) vs `dummy variabel` (n-1)
+
+```{r}
+# model.matrix(~nama_kolom, data)
+mm_matrix <- model.matrix( ~marital, data = bank_clean)
+
+
+# cek hasil model.matrix
+mm_matrix[,-1] %>% 
+  as.data.frame() %>% 
+  head()
+
+# mm_matrix
+```
+
+Gunakan `model.matrix()` untuk data bank (variable prediktor + target)
+dan simpan ke dalam `bank_m`
+
+```{r}
+bank_m <- model.matrix(y ~ ., data = bank_clean)
+
+colnames(bank_m)
+```
+
+hasil dari `bank_m` berupa matrix yang isi predictor saja. kita akan
+membuat object baru yang bernama `bank_m_new` yag berisi predictor,
+target, serta menghapus kolom intercept.
+
+1.  jadikan bank_m data.frame
+2.  remove intercept
+3.  tambahkan kolom y (bank_clean\$y)
+4.  simpan pada object bank_m\_new
+
+```{r}
+bank_m_new <- bank_m[,-1] %>% 
+  as.data.frame() %>% 
+  mutate(y = bank_clean$y)
+
+bank_m_new
+```
+
+agar bisa digunakan dalam formula nama kolom yang mengandung "-" harus
+dihilangkan terlebih dahulu menggunakan `gsub()`
+
+Intuisi `gsub()`:
+
+```{r}
+temp <- c("bank-tele","jobblue-collar")
+gsub(pattern = "-",replacement = "",x = temp)
+```
+
+Aplikasikan `gsub()` pada nama kolom di data `bank_m`
+
+```{r}
+colnames(bank_m_new) <- gsub(pattern = "-", replacement = "", x = colnames(bank_m_new))
+colnames(bank_m_new)
+```
+
+**2. Pembuatan model menggunakan `neuralnet()`**
+
+Buat model deep learning untuk kasus klasifikasi dengan parameter:
+
+-   gunakan set.seed(100)
+-   jumlah hidden layer: 2
+-   jumlah node pada hidden layer: h1 = 5; h2 = 3
+-   jumlah percobaan pembuatan model: 1
+-   act.fct: logistic
+-   err.fct: ce
+-   linear.output: F
+
+```{r, eval = FALSE}
+# MODEL JANGAN DI RUN
+set.seed(100)
+model_bank1 <- neuralnet(formula = y ~ .,
+                    data = bank_m_new %>% head(100),
+                    hidden = c(5,3),
+                    linear.output = F,
+                    act.fct = "logistic",
+                    err.fct = "ce",
+                    rep = 1)
+
+plot(model_bank1, rep = 1)
+```
+
+berapa jumlah neuron pada input layer? 26
+
+hidden layer 1 : 5
+
+hidden layer 2 : 3
+
+output layer : 2
+
+Kita tidak menjalankan model karena waktu trainingnya cukup lama. Bila
+kita nanti membuat model deep learning, ada baiknya kita simpan model
+secara lokal dalam bentuk RDS agar fleksibel untuk digunakan kembali.
+
+```{r}
+# save model
+# saveRDS(model_bank, file = "bank_marketing_nn.rds")
+```
+
+read model.rds
+
+```{r}
+model_bank <- readRDS("model/bank_marketing_nn.rds")
+```
+
+plot model `model_bank`:
+
+```{r fig.width=10}
+plot(model_bank,rep = "best")
+```
+
+## Predict
+
+Untuk prediksi kita dapat gunakan `compute()` namun perlu mencari tahu
+model terbaik berasal dari `rep` berapa:
+
+```{r}
+bank_m <- model.matrix(~., bank_clean) %>% 
+  as.data.frame() %>% 
+  select(-1)
+colnames(bank_m) <- gsub(pattern = "-", replacement = "", x = colnames(bank_m))
+```
+
+Note bahwa kita tadi tidak melakukan cross validation (train-test
+split). Maka kita akan coba melakukan prediksi ke data yang digunakan
+untuk pembuatan model yaitu `bank_m`. Simpan hasil prediksi ke objek
+`bank_nn_pred`:
+
+```{r}
+#bank_nn_pred
+bank_nn_pred <- neuralnet::compute(x = model_bank, covariate = bank_m)
+  
+# inspect
+head(bank_nn_pred$net.result)
+```
+
+Ubah ke bentuk label (coba gunakan treshold klasifikasi = 0.5):
+
+```{r}
+# your code
+pred_label <-  as.factor(ifelse(bank_nn_pred$net.result>0.5, "yes","no"))
+
+
+# inspect
+head(pred_label)
+```
+
+```{r}
+pred_label %>% 
+  table() %>% 
+  prop.table()
+```
+
+## Model Evaluation
+
+**Business Question:** Memprediksi apakah seorang calon pelanggan akan
+setuju mengajukan program deposit atau tidak?
+
+-   Kelas positif: yes
+-   Kelas negatif: no
+
+```{r}
+bank_clean$y %>% 
+  table() %>% 
+  prop.table()
+```
+
+```{r}
+library(caret)
+confusionMatrix(data = pred_label, reference = bank_clean$y, positive = "yes")
+```
+
+**NOTE:** Hasil masih kurang baik. Kita perlu melakukan tuning model,
+misalnya dengan melakukan balancing data atau dengan mengatur beberapa
+parameter pada pembuatan model. Untuk tuning pada pembuatan model, akan
+lebih fleksibel dilakukan menggunakan framework `Keras`.
+
+```{r}
+# RF
+library(randomForest)
+model_rf <- randomForest(y~., data = bank_clean)
+
+# tree
+library(partykit)
+model_tree <- ctree(y~. , data = bank_clean)
+
+# naive bayes
+library(e1071)
+model_nb <- naiveBayes(y~., data = )
+```
+
+# Deep Learning with Keras
+
+Ada banyak frameworks (template) yang bisa kita gunakan untuk membangun
+neural network/deep learning model:
+
+-   Tensor Flow
+-   [Keras](https://keras.rstudio.com/)
+-   Pytorch
+-   Caffe
+-   Theano, etc.
+
+Untuk selanjutnya, kita akan menggunakan `Keras` dalam membuat
+arsitektur dan melakukan training model. `Keras` adalah package yang
+membantu kita mengimplementasikan model Deep Learning dengan cepat.
+`Keras` memanfaatkan `tensorflow`, sebuah tools open source yang
+dikembangkan oleh Google untuk implementasi Deep Learning.
+
+## Verify `keras` installation
+
+```{r}
+library(keras)
+library(tensorflow)
+use_condaenv("r-tensorflow")
+model <- keras_model_sequential()
+```
+
+1.  Math dari NN
+2.  Menerapkan NN pada data tabular
+3.  install keras
